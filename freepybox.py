@@ -3,38 +3,41 @@ import hmac
 import time
 import json
 import ipaddress
+import os
 from urllib.parse import urljoin
-from .config import *
 from .access import Access
 from .api.system import System
 from .api.dhcp import Dhcp
 from .api.switch import Switch
 from .api.lan import Lan
 from .api.wifi import Wifi
+from .api.fs import Fs
+from .api.fsnav import Fsnav
 
 
-conf_desc = {
-    'freebox_api_version': freebox_api_version,
-    'app_token_file_path': app_token_file_path,
-    'app_id': app_name + app_version,
-    'app_name': app_name,
-    'app_version': app_version,
-    'device_name': dev_name,
-    'http_timeout': http_timeout}
+# Token file default location
+token_filename = 'app_auth'
+token_dir = os.path.dirname(os.path.abspath(__file__))
+token_file = os.path.join(token_dir, token_filename)
 
 
 class Freepybox:
-    def __init__(self, ip, port=80, protocol='http', conf=conf_desc):
+    def __init__(self, app_desc, token_file=token_file, api_version='v3', timeout=10):
 
-        self._ip = ip
-        self._base_url = '{0}://{1}:{2}/api/{3}/'.format(protocol, ip, port, conf['freebox_api_version'])
-        self._conf = conf
+        self.token_file = token_file
+        self.api_version = api_version
+        self.timeout = timeout
+        self.app_desc = app_desc
 
-        # Obtain session token from the freebox
-        self._session_token, self._session_permission = self._login()
 
-        # Create freebox http access module
-        self._access = Access(self._base_url, self._session_token, self._conf['http_timeout'])
+
+    def open(self, ip, port=80, protocol='http'):
+        '''
+        Open a session to the freebox, get a valid access module
+        and instantiate freebox modules
+        '''
+        if not self._is_app_desc_valid(self.app_desc): raise Exception('unvalid application descriptor')
+        self._access = self._get_freebox_access(ip, port, protocol, self.api_version, self.token_file, self.app_desc, self.timeout)
 
         # Instantiate freebox modules
         self.system = System(self._access)
@@ -42,46 +45,47 @@ class Freepybox:
         self.switch = Switch(self._access)
         self.lan = Lan(self._access)
         self.wifi = Wifi(self._access)
+        self.fs = Fs(self._access)
+        self.fsnav = Fsnav(self._access)
 
 
     def close(self):
         '''
         Close the freebox session
         '''
+        if self._access is None: raise Exception('Not opened')
+
         self._access.post('login/logout')
 
 
-    def _login(self):
+    def _get_freebox_access(self, ip, port, protocol, api_version, token_file, app_desc, timeout=10):
         '''
-        Login to the freebox : obtain a session token from the API
+        Returns an access object used for HTTP requests.
         '''
 
-        # Check wether IP is private
-        try:
-                is_private_ip = ipaddress.ip_address(self._ip).is_private
-        except ValueError:
-                is_private_ip = False
+        # Build HTTP base URL
+        base_url = '{0}://{1}:{2}/api/{3}/'.format(protocol, ip, port, api_version)
                 
         # Read stored application token
         print('Read application authorization file')
-        is_stored_token_valid = self._read_app_token()
-        app_token, track_id = is_stored_token_valid if is_stored_token_valid is not False else (None, None)
+        app_token, track_id = self._readfile_app_token(token_file)
         
         # If no application token is stored then request a token to freebox api - Only for LAN connection
         if app_token is None:
                 print('No authorization file found')
                 # Raise Error if not private connection
-                if not is_private_ip:
-                        raise Exception('No authorization file found for this application. Please connect in LAN to get authorization from the Freebox')
+                if not self._is_private_ip:
+                        raise Exception('No authorization file found for this application. \
+                        Please connect in LAN to get authorization from the Freebox')
                 
                 # Get application token from the freebox
-                app_token, track_id = self._get_app_token()
+                app_token, track_id = self._get_app_token(base_url, app_desc, timeout)
                 
                 # Check the authorization status
                 out_msg_flag = False
                 status = None
                 while(status != 'granted'):
-                    status = self._get_authorization_status(track_id)
+                    status = self._get_authorization_status(base_url, track_id, timeout)
 
                     # denied status = authorization failed
                     if status == 'denied':
@@ -101,22 +105,26 @@ class Freepybox:
                 print('Application authorization granted')
                 
                 # Store application token in file
-                self._write_app_token(app_token, track_id)
-                print('Application token file was generated : {0}'.format(self._conf['app_token_file_path']))
+                self._writefile_app_token(app_token, track_id, token_file)
+                print('Application token file was generated : {0}'.format(token_file))
         
 
         # Get token for the current session
-        session_token, session_permissions = self._get_session_token(app_token, self._conf['app_id'])
+        session_token, session_permissions = self._get_session_token(base_url, app_token, app_desc['app_id'], timeout)
 
         print('Session opened')
         print('Permissions:')
         for i in session_permissions:
             print('{:15s} {:16s}'.format(i, str(session_permissions[i])))
 
-        return session_token, session_permissions
+
+        # Create freebox http access module
+        fbx_access = Access(base_url, session_token, timeout)
+
+        return fbx_access
 
 
-    def _get_authorization_status(self, track_id):
+    def _get_authorization_status(self, base_url, track_id, timeout):
         '''
         Get authorization status of the application token
         Returns:
@@ -126,31 +134,25 @@ class Freepybox:
             granted 	the app_token is valid and can be used to open a session
             denied 	    the user denied the authorization request
         '''
-        url = urljoin(self._base_url, 'login/authorize/{0}'.format(track_id))
-        r = requests.get(url, timeout=self._conf['http_timeout'])
+        url = urljoin(base_url, 'login/authorize/{0}'.format(track_id))
+        r = requests.get(url, timeout=timeout)
         resp = r.json()
         return resp['result']['status']
 
 
-    def _get_app_token(self):
+    def _get_app_token(self, base_url, app_desc, timeout=10):
         """
         Get the application token from the freebox
         Returns (app_token, track_id)
         """
         # Get authentification token
-        url = urljoin(self._base_url, 'login/authorize/')
-        payload = {
-            'app_id': self._conf['app_name'] + self._conf['app_version'],
-            'app_name': self._conf['app_name'],
-            'app_version': self._conf['app_version'],
-            'device_name': self._conf['device_name']}
-
-        data = json.dumps(payload)
-        r = requests.post(url, data=data, timeout=self._conf['http_timeout'])
+        url = urljoin(base_url, 'login/authorize/')
+        data = json.dumps(app_desc)
+        r = requests.post(url, data, timeout=timeout)
         resp = r.json()
 
         # raise exception if resp.success != True
-        if resp.get('success') != True:
+        if not resp.get('success'):
             raise Exception('authentification failed')
 
         app_token = resp['result']['app_token']
@@ -159,49 +161,49 @@ class Freepybox:
         return(app_token, track_id)
 
 
-    def _write_app_token(self, app_token, track_id):
+    def _writefile_app_token(self, app_token, track_id, file):
         """
         Store the application token in g_app_auth_file file
         """
-        with open(self._conf['app_token_file_path'], 'w') as f:
+        with open(file, 'w') as f:
             f.write(app_token+'\n')
             f.write(str(track_id))
 
 
-    def _read_app_token(self):
+    def _readfile_app_token(self, file):
         """
         Read the application token in g_app_auth_file file.
-        Return False if the file doesn't exist else return (app_token, track_id)
+        Returns (app_token, track_id)
         """
         try:
-            with open(self._conf['app_token_file_path'], 'r') as f:
+            with open(file, 'r') as f:
                 app_token = f.readline().split()[0]
                 track_id = f.readline().split()[0]
                 return (app_token, track_id)
 
         except FileNotFoundError:
-            return False
+            return (None, None)
 
 
-    def _get_session_token(self, app_token, app_id):
+    def _get_session_token(self, base_url, app_token, app_id, timeout=10):
         """
-        Get session token from app_token._get_session_token
+        Get session token from freebox.
         Returns (session_token, session_permissions)
         """
         # Get challenge from API
-        challenge = self._get_challenge()
+        challenge = self._get_challenge(base_url, timeout)
 
         # Hash app_token with chalenge key to get the password
         h = hmac.new(app_token.encode(), challenge.encode(), 'sha1')
         password = h.hexdigest()
 
-        url = urljoin(self._base_url, 'login/session/')
+        url = urljoin(base_url, 'login/session/')
         data = json.dumps({'app_id': app_id, 'password': password})
-        r = requests.post(url, data, timeout=self._conf['http_timeout'])
+        r = requests.post(url, data, timeout=timeout)
         resp = r.json()
 
         # raise exception if resp.success != True
-        if resp.get('success') != True:
+        if not resp.get('success'):
             raise Exception('get_session_token failed')
 
         session_token = resp.get('result').get('session_token')
@@ -210,16 +212,44 @@ class Freepybox:
         return(session_token, session_permissions)
 
 
-    def _get_challenge(self):
+    def _get_challenge(self, base_url, timeout=10):
         '''
         Return challenge from freebox API
         '''
-        url = urljoin(self._base_url, 'login')
-        r = requests.get(url, timeout=self._conf['http_timeout'])
+        url = urljoin(base_url, 'login')
+        r = requests.get(url, timeout=timeout)
         resp = r.json()
 
         # raise exception if resp.success != True
-        if resp.get('success') != True:
+        if not resp.get('success'):
             raise Exception('get_challenge failed')
 
         return resp['result']['challenge']
+
+
+    def _is_private_ip(self, ip):
+        '''
+        Check wether IP is private
+        '''
+        try:
+            return ipaddress.ip_address(ip).is_private
+        except ValueError:
+            return False
+
+
+    def _get_base_url(self, ip, port, protocol, freebox_api_version):
+        '''
+        Returns base url for HTTP requests
+        :return:
+        '''
+        return '{0}://{1}:{2}/api/{3}/'.format(protocol, ip, port, freebox_api_version)
+
+
+    def _is_app_desc_valid(self, app_desc):
+        '''
+        Check validity of the application descriptor
+        '''
+        if all(k in app_desc for k in ('app_id', 'app_name', 'app_version', 'device_name')):
+            return True
+        else:
+            return False
