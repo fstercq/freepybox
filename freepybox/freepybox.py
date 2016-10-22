@@ -16,6 +16,7 @@ from freepybox.api.lan import Lan
 from freepybox.api.wifi import Wifi
 from freepybox.api.fs import Fs
 from freepybox.api.fsnav import Fsnav
+from freepybox.api.call import Call
 
 
 # Token file default location
@@ -56,6 +57,7 @@ class Freepybox:
         self.lan = Lan(self._access)
         self.wifi = Wifi(self._access)
         self.fs = Fs(self._access)
+        self.call = Call(self._access)
         self.fsnav = Fsnav(self._access)
 
 
