@@ -6,6 +6,7 @@ import ipaddress
 import os
 import socket
 from urllib.parse import urljoin
+import freepybox
 from freepybox.exceptions import *
 from freepybox.access import Access
 from freepybox.api.system import System
@@ -26,7 +27,7 @@ token_file = os.path.join(token_dir, token_filename)
 app_desc = {
     'app_id':'fpbx',
     'app_name':'freepybox',
-    'app_version':'1.0.0',
+    'app_version':freepybox.__version__,
     'device_name':socket.gethostname()
 	}
 
@@ -83,9 +84,8 @@ class Freepybox:
         if app_token is None or file_app_desc != app_desc:
                 print('No valid authorization file found')
                 # Raise Error if not private connection
-                if not self._is_private_ip:
-                        raise InvalidTokenError('No valid authorization file found for this application. \
-                        Please connect in LAN to get authorization from the Freebox')
+                if not self._is_private_ip(ip):
+                        raise InvalidTokenError('No valid authorization file found for this application. Please connect in LAN to get authorization from the Freebox')
                 
                 # Get application token from the freebox
                 app_token, track_id = self._get_app_token(base_url, app_desc, timeout)
