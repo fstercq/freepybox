@@ -4,15 +4,17 @@ import time
 import json
 import ipaddress
 import os
+import socket
 from urllib.parse import urljoin
-from .access import Access
-from .api.system import System
-from .api.dhcp import Dhcp
-from .api.switch import Switch
-from .api.lan import Lan
-from .api.wifi import Wifi
-from .api.fs import Fs
-from .api.fsnav import Fsnav
+from freepybox.exceptions import *
+from freepybox.access import Access
+from freepybox.api.system import System
+from freepybox.api.dhcp import Dhcp
+from freepybox.api.switch import Switch
+from freepybox.api.lan import Lan
+from freepybox.api.wifi import Wifi
+from freepybox.api.fs import Fs
+from freepybox.api.fsnav import Fsnav
 
 
 # Token file default location
@@ -20,9 +22,17 @@ token_filename = 'app_auth'
 token_dir = os.path.dirname(os.path.abspath(__file__))
 token_file = os.path.join(token_dir, token_filename)
 
+# Default application descriptor
+app_desc = {
+    'app_id':'fpbx',
+    'app_name':'freepybox',
+    'app_version':'1.0.0',
+    'device_name':socket.gethostname()
+	}
+
 
 class Freepybox:
-    def __init__(self, app_desc, token_file=token_file, api_version='v3', timeout=10):
+    def __init__(self, app_desc=app_desc, token_file=token_file, api_version='v3', timeout=10):
 
         self.token_file = token_file
         self.api_version = api_version
@@ -30,13 +40,12 @@ class Freepybox:
         self.app_desc = app_desc
 
 
-
     def open(self, ip, port=80, protocol='http'):
         '''
         Open a session to the freebox, get a valid access module
         and instantiate freebox modules
         '''
-        if not self._is_app_desc_valid(self.app_desc): raise Exception('unvalid application descriptor')
+        if not self._is_app_desc_valid(self.app_desc): raise InvalidTokenError('invalid application descriptor')
         self._access = self._get_freebox_access(ip, port, protocol, self.api_version, self.token_file, self.app_desc, self.timeout)
 
         # Instantiate freebox modules
@@ -53,7 +62,7 @@ class Freepybox:
         '''
         Close the freebox session
         '''
-        if self._access is None: raise Exception('Not opened')
+        if self._access is None: raise NotOpenError('Freebox is Not opened')
 
         self._access.post('login/logout')
 
@@ -68,14 +77,14 @@ class Freepybox:
                 
         # Read stored application token
         print('Read application authorization file')
-        app_token, track_id = self._readfile_app_token(token_file)
+        app_token, track_id, file_app_desc = self._readfile_app_token(token_file)
         
-        # If no application token is stored then request a token to freebox api - Only for LAN connection
-        if app_token is None:
-                print('No authorization file found')
+        # If no valid token is stored then request a token to freebox api - Only for LAN connection
+        if app_token is None or file_app_desc != app_desc:
+                print('No valid authorization file found')
                 # Raise Error if not private connection
                 if not self._is_private_ip:
-                        raise Exception('No authorization file found for this application. \
+                        raise InvalidTokenError('No valid authorization file found for this application. \
                         Please connect in LAN to get authorization from the Freebox')
                 
                 # Get application token from the freebox
@@ -89,7 +98,7 @@ class Freepybox:
 
                     # denied status = authorization failed
                     if status == 'denied':
-                        raise Exception('authorization denied : the app_token is invalid or has been revoked')
+                        raise AuthorizationError('the app_token is invalid or has been revoked')
 
                     # Pending status : user must accept the app request on the freebox
                     elif status == 'pending':
@@ -100,12 +109,12 @@ class Freepybox:
 
                     # timeout = authorization failed
                     elif status == 'timeout':
-                        raise Exception('authorization denied : timeout')
+                        raise AuthorizationError('timeout')
                         
                 print('Application authorization granted')
                 
                 # Store application token in file
-                self._writefile_app_token(app_token, track_id, token_file)
+                self._writefile_app_token(app_token, track_id, app_desc, token_file)
                 print('Application token file was generated : {0}'.format(token_file))
         
 
@@ -153,7 +162,7 @@ class Freepybox:
 
         # raise exception if resp.success != True
         if not resp.get('success'):
-            raise Exception('authentification failed')
+            raise AuthorizationError('authentification failed')
 
         app_token = resp['result']['app_token']
         track_id = resp['result']['track_id']
@@ -161,28 +170,32 @@ class Freepybox:
         return(app_token, track_id)
 
 
-    def _writefile_app_token(self, app_token, track_id, file):
+    def _writefile_app_token(self, app_token, track_id, app_desc, file):
         """
         Store the application token in g_app_auth_file file
         """
+        d = app_desc
+        d.update({'app_token': app_token, 'track_id': track_id})
+
         with open(file, 'w') as f:
-            f.write(app_token+'\n')
-            f.write(str(track_id))
+            json.dump(d, f)
 
 
     def _readfile_app_token(self, file):
         """
         Read the application token in g_app_auth_file file.
-        Returns (app_token, track_id)
+        Returns (app_token, track_id, app_desc)
         """
         try:
             with open(file, 'r') as f:
-                app_token = f.readline().split()[0]
-                track_id = f.readline().split()[0]
-                return (app_token, track_id)
+                d = json.load(f)
+                app_token = d['app_token']
+                track_id = d['track_id']
+                app_desc = {k: d[k] for k in ('app_id', 'app_name', 'app_version', 'device_name') if k in d}
+                return (app_token, track_id, app_desc)
 
         except FileNotFoundError:
-            return (None, None)
+            return (None, None, None)
 
 
     def _get_session_token(self, base_url, app_token, app_id, timeout=10):
@@ -204,7 +217,7 @@ class Freepybox:
 
         # raise exception if resp.success != True
         if not resp.get('success'):
-            raise Exception('get_session_token failed')
+            raise AuthorizationError('get_session_token failed')
 
         session_token = resp.get('result').get('session_token')
         session_permissions = resp.get('result').get('permissions')
@@ -222,7 +235,7 @@ class Freepybox:
 
         # raise exception if resp.success != True
         if not resp.get('success'):
-            raise Exception('get_challenge failed')
+            raise AuthorizationError('get_challenge failed')
 
         return resp['result']['challenge']
 

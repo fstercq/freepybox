@@ -1,6 +1,7 @@
 import requests
 import json
 from urllib.parse import urljoin
+from freepybox.exceptions import *
 
 class Access:
     def __init__(self, base_url, session_token, http_timeout):
@@ -18,7 +19,7 @@ class Access:
         resp = r.json()
 
         if resp['success'] != True:
-            raise Exception('HTT Request failed : {0}'.format(resp['error_code']))
+            raise HttpRequestError(resp['error_code'])
 
         if 'result' in resp:
             return resp['result']
@@ -34,7 +35,7 @@ class Access:
         resp = r.json()
 
         if resp['success'] != True:
-            raise Exception('HTT Request failed : {0}'.format(resp['error_code']))
+            raise HttpRequestError(resp['error_code'])
 
         if 'result' in resp:
             return resp['result']
@@ -50,7 +51,7 @@ class Access:
         resp = r.json()
 
         if resp['success'] != True:
-            raise Exception('HTT Request failed : {0}'.format(resp['error_code']))
+            raise HttpRequestError(resp['error_code'])
 
         if 'result' in resp:
             return resp['result']
