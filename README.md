@@ -38,7 +38,7 @@ fbx.system.reboot()
 # Properly close the session.
 fbx.close()
 ```
-Have a look on the example.py to have a more complete overview.
+Have a look on the example.py for a more complete overview.
 
 Resources
 ---------
