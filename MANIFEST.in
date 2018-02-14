@@ -1,1 +1,2 @@
 include *.md
+include freepybox/freebox_root_ca.pem
