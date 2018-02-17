@@ -5,7 +5,7 @@ Provides authentification and row access to Freebox using Freebox OS developer A
 Freebox API documentation : http://dev.freebox.fr/sdk/os/
 '''
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 __all__ = ['freepybox']
 
 from freepybox.freepybox import Freepybox
