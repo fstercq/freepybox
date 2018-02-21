@@ -4,7 +4,8 @@ from urllib.parse import urljoin
 from freepybox.exceptions import *
 
 class Access:
-    def __init__(self, base_url, session_token, http_timeout):
+    def __init__(self, session, base_url, session_token, http_timeout):
+        self.session = session
         self.header = {'X-Fbx-App-Auth': session_token}
         self.base_url = base_url
         self.timeout = http_timeout
@@ -15,7 +16,7 @@ class Access:
         Send get request and return results
         '''
         url = urljoin(self.base_url, end_url)
-        r = requests.get(url, headers=self.header, timeout=self.timeout)
+        r = self.session.get(url, headers=self.header, timeout=self.timeout)
         resp = r.json()
 
         if resp['success'] != True:
@@ -31,7 +32,7 @@ class Access:
         '''
         url = urljoin(self.base_url, end_url)
         data = json.dumps(payload) if payload is not None else None
-        r = requests.post(url, headers=self.header, data=data, timeout=self.timeout)
+        r = self.session.post(url, headers=self.header, data=data, timeout=self.timeout)
         resp = r.json()
 
         if resp['success'] != True:
@@ -47,7 +48,7 @@ class Access:
         '''
         url = urljoin(self.base_url, end_url)
         data = json.dumps(payload) if payload is not None else None
-        r = requests.put(url, headers=self.header, data=data, timeout=self.timeout)
+        r = self.session.put(url, headers=self.header, data=data, timeout=self.timeout)
         resp = r.json()
 
         if resp['success'] != True:

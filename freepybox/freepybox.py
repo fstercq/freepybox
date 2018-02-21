@@ -30,25 +30,27 @@ app_desc = {
     'app_name':'freepybox',
     'app_version':freepybox.__version__,
     'device_name':socket.gethostname()
-	}
+    }
 
 
 class Freepybox:
     def __init__(self, app_desc=app_desc, token_file=token_file, api_version='v3', timeout=10):
-
         self.token_file = token_file
         self.api_version = api_version
         self.timeout = timeout
         self.app_desc = app_desc
 
-
-    def open(self, ip, port=80, protocol='http'):
+    def open(self, host, port):
         '''
         Open a session to the freebox, get a valid access module
         and instantiate freebox modules
         '''
         if not self._is_app_desc_valid(self.app_desc): raise InvalidTokenError('invalid application descriptor')
-        self._access = self._get_freebox_access(ip, port, protocol, self.api_version, self.token_file, self.app_desc, self.timeout)
+
+        self.session = requests.Session()
+        self.session.verify = os.path.join(os.path.dirname(__file__), 'freebox_root_ca.pem')
+
+        self._access = self._get_freebox_access(host, port, self.api_version, self.token_file, self.app_desc, self.timeout)
 
         # Instantiate freebox modules
         self.system = System(self._access)
@@ -70,13 +72,12 @@ class Freepybox:
         self._access.post('login/logout')
 
 
-    def _get_freebox_access(self, ip, port, protocol, api_version, token_file, app_desc, timeout=10):
+    def _get_freebox_access(self, host, port, api_version, token_file, app_desc, timeout=10):
         '''
         Returns an access object used for HTTP requests.
         '''
 
-        # Build HTTP base URL
-        base_url = '{0}://{1}:{2}/api/{3}/'.format(protocol, ip, port, api_version)
+        base_url = self._get_base_url(host, port, api_version)
                 
         # Read stored application token
         print('Read application authorization file')
@@ -85,9 +86,6 @@ class Freepybox:
         # If no valid token is stored then request a token to freebox api - Only for LAN connection
         if app_token is None or file_app_desc != app_desc:
                 print('No valid authorization file found')
-                # Raise Error if not private connection
-                if not self._is_private_ip(ip):
-                        raise InvalidTokenError('No valid authorization file found for this application. Please connect in LAN to get authorization from the Freebox')
                 
                 # Get application token from the freebox
                 app_token, track_id = self._get_app_token(base_url, app_desc, timeout)
@@ -130,7 +128,7 @@ class Freepybox:
 
 
         # Create freebox http access module
-        fbx_access = Access(base_url, session_token, timeout)
+        fbx_access = Access(self.session, base_url, session_token, timeout)
 
         return fbx_access
 
@@ -146,7 +144,7 @@ class Freepybox:
             denied 	    the user denied the authorization request
         '''
         url = urljoin(base_url, 'login/authorize/{0}'.format(track_id))
-        r = requests.get(url, timeout=timeout)
+        r = self.session.get(url, timeout=timeout)
         resp = r.json()
         return resp['result']['status']
 
@@ -159,7 +157,7 @@ class Freepybox:
         # Get authentification token
         url = urljoin(base_url, 'login/authorize/')
         data = json.dumps(app_desc)
-        r = requests.post(url, data, timeout=timeout)
+        r = self.session.post(url, data, timeout=timeout)
         resp = r.json()
 
         # raise exception if resp.success != True
@@ -214,7 +212,7 @@ class Freepybox:
 
         url = urljoin(base_url, 'login/session/')
         data = json.dumps({'app_id': app_id, 'password': password})
-        r = requests.post(url, data, timeout=timeout)
+        r = self.session.post(url, data, timeout=timeout)
         resp = r.json()
 
         # raise exception if resp.success != True
@@ -232,7 +230,7 @@ class Freepybox:
         Return challenge from freebox API
         '''
         url = urljoin(base_url, 'login')
-        r = requests.get(url, timeout=timeout)
+        r = self.session.get(url, timeout=timeout)
         resp = r.json()
 
         # raise exception if resp.success != True
@@ -242,22 +240,12 @@ class Freepybox:
         return resp['result']['challenge']
 
 
-    def _is_private_ip(self, ip):
+    def _get_base_url(self, host, port, freebox_api_version):
         '''
-        Check wether IP is private
-        '''
-        try:
-            return ipaddress.ip_address(ip).is_private
-        except ValueError:
-            return False
-
-
-    def _get_base_url(self, ip, port, protocol, freebox_api_version):
-        '''
-        Returns base url for HTTP requests
+        Returns base url for HTTPS requests
         :return:
         '''
-        return '{0}://{1}:{2}/api/{3}/'.format(protocol, ip, port, freebox_api_version)
+        return 'https://{0}:{1}/api/{2}/'.format(host, port, freebox_api_version)
 
 
     def _is_app_desc_valid(self, app_desc):
