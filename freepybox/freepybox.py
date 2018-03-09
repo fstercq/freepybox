@@ -3,6 +3,7 @@ import hmac
 import time
 import json
 import ipaddress
+import logging
 import os
 import socket
 from urllib.parse import urljoin
@@ -32,6 +33,7 @@ app_desc = {
     'device_name':socket.gethostname()
     }
 
+logger = logging.getLogger(__name__)
 
 class Freepybox:
     def __init__(self, app_desc=app_desc, token_file=token_file, api_version='v3', timeout=10):
@@ -78,18 +80,18 @@ class Freepybox:
         '''
 
         base_url = self._get_base_url(host, port, api_version)
-                
+
         # Read stored application token
-        print('Read application authorization file')
+        logger.info('Read application authorization file')
         app_token, track_id, file_app_desc = self._readfile_app_token(token_file)
-        
+
         # If no valid token is stored then request a token to freebox api - Only for LAN connection
         if app_token is None or file_app_desc != app_desc:
-                print('No valid authorization file found')
-                
+                logger.info('No valid authorization file found')
+
                 # Get application token from the freebox
                 app_token, track_id = self._get_app_token(base_url, app_desc, timeout)
-                
+
                 # Check the authorization status
                 out_msg_flag = False
                 status = None
@@ -110,22 +112,19 @@ class Freepybox:
                     # timeout = authorization failed
                     elif status == 'timeout':
                         raise AuthorizationError('timeout')
-                        
-                print('Application authorization granted')
-                
+
+                logger.info('Application authorization granted')
+
                 # Store application token in file
                 self._writefile_app_token(app_token, track_id, app_desc, token_file)
-                print('Application token file was generated : {0}'.format(token_file))
-        
+                logger.info('Application token file was generated : {0}'.format(token_file))
+
 
         # Get token for the current session
         session_token, session_permissions = self._get_session_token(base_url, app_token, app_desc['app_id'], timeout)
 
-        print('Session opened')
-        print('Permissions:')
-        for i in session_permissions:
-            print('{:15s} {:16s}'.format(i, str(session_permissions[i])))
-
+        logger.info('Session opened')
+        logger.info('Permissions: ' + str(session_permissions))
 
         # Create freebox http access module
         fbx_access = Access(self.session, base_url, session_token, timeout)
