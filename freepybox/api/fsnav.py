@@ -1,5 +1,8 @@
 from .fs import Fs
+import logging
 import os
+
+logger = logging.getLogger(__name__)
 
 class Fsnav:
 
@@ -30,7 +33,7 @@ class Fsnav:
             if self._path_exists(path):
                 self._path = os.path.join(self._path, path)
             else:
-                print('{0} does not exist'.format(os.path.join(self._path, path)))
+                logger.error('{0} does not exist'.format(os.path.join(self._path, path)))
 
 
     def _path_exists(self, path):
