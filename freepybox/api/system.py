@@ -3,20 +3,14 @@ class System:
     def __init__(self, access):
         self._access = access
 
-
-    def get_config(self):
+    async def get_config(self):
         '''
         Get system configuration:
         '''
-        return self._access.get('system/')
+        return await self._access.get('system/')
 
-
-    def reboot(self):
+    async def reboot(self):
         '''
         Reboot freebox
         '''
-        self._access.post('system/reboot')
-
-
-
-
+        await self._access.post('system/reboot')

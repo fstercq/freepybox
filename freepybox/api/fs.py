@@ -4,68 +4,60 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class Fs:
 
     def __init__(self, access):
         self._access = access
         self._path = '/'
 
-
     def pwd(self):
         '''
-        Print working directory
+        Returns the working directory
         '''
-        print(self._path)
+        return self._path
 
-
-    def cd(self, path):
+    async def cd(self, path):
         '''
-        Change directory
+        Changes the current directory
         '''
-        if self._path_exists(path):
+        if await self._path_exists(path):
             self._path = os.path.join(self._path, path)
         else:
             logger.error('{0} does not exist'.format(os.path.join(self._path, path)))
 
-
-    def _path_exists(self, path):
+    async def _path_exists(self, path):
         '''
-        Return True if the path exists
+        Returns True if the path exists
         '''
         try:
-            self.get_file_info(os.path.join(self._path, path))
+            await self.get_file_info(os.path.join(self._path, path))
             return True
         except:
             return False
 
-
-    def ls(self):
+    async def ls(self):
         '''
-        list directory
+        List directory
         '''
-        for i in self.list_file(self._path):
-            print(i['name'])
+        return [i['name'] for i in await self.list_file(self._path)]
 
-
-    def get_tasks_list(self):
+    async def get_tasks_list(self):
         '''
-        Return the collection of all tasks
+        Returns the collection of all tasks
         '''
-        return self._access.get('fs/tasks/')
+        return await self._access.get('fs/tasks/')
 
-
-    def list_file(self, path):
+    async def list_file(self, path):
         '''
         Returns the list of files for the given path
         '''
         path_b64 = base64.b64encode(path.encode('utf-8')).decode('utf-8')
-        return self._access.get('fs/ls/{0}'.format(path_b64))
+        return await self._access.get('fs/ls/{0}'.format(path_b64))
 
-
-    def get_file_info(self, path):
+    async def get_file_info(self, path):
         '''
-        Returns informations for the given path
+        Returns information for the given path
         '''
         path_b64 = base64.b64encode(path.encode('utf-8')).decode('utf-8')
-        return self._access.get('fs/ls/{0}'.format(path_b64))
-
+        return await self._access.get('fs/ls/{0}'.format(path_b64))
