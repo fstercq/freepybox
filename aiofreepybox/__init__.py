@@ -6,6 +6,6 @@ Freebox API documentation : http://dev.freebox.fr/sdk/os/
 '''
 
 __version__ = '0.0.3'
-__all__ = ['freepybox']
+__all__ = ['aiofreepybox']
 
-from freepybox.freepybox import Freepybox
+from aiofreepybox.aiofreepybox import Freepybox

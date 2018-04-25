@@ -1,6 +1,6 @@
 import json
 from urllib.parse import urljoin
-from freepybox.exceptions import *
+from aiofreepybox.exceptions import *
 
 
 class Access:

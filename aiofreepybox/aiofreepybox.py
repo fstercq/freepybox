@@ -11,16 +11,16 @@ from urllib.parse import urljoin
 
 import aiohttp
 
-import freepybox
-from freepybox.exceptions import *
-from freepybox.access import Access
-from freepybox.api.system import System
-from freepybox.api.dhcp import Dhcp
-from freepybox.api.switch import Switch
-from freepybox.api.lan import Lan
-from freepybox.api.wifi import Wifi
-from freepybox.api.fs import Fs
-from freepybox.api.call import Call
+import aiofreepybox
+from aiofreepybox.exceptions import *
+from aiofreepybox.access import Access
+from aiofreepybox.api.system import System
+from aiofreepybox.api.dhcp import Dhcp
+from aiofreepybox.api.switch import Switch
+from aiofreepybox.api.lan import Lan
+from aiofreepybox.api.wifi import Wifi
+from aiofreepybox.api.fs import Fs
+from aiofreepybox.api.call import Call
 
 
 # Token file default location
@@ -30,9 +30,9 @@ token_file = os.path.join(token_dir, token_filename)
 
 # Default application descriptor
 app_desc = {
-    'app_id': 'fpbx',
-    'app_name': 'freepybox',
-    'app_version': freepybox.__version__,
+    'app_id': 'aiofpbx',
+    'app_name': 'aiofreepybox',
+    'app_version': aiofreepybox.__version__,
     'device_name': socket.gethostname()
     }
 

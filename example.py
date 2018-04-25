@@ -6,7 +6,7 @@ This example can be run safely as it won't change anything in your box configura
 '''
 
 import asyncio
-from freepybox import Freepybox
+from aiofreepybox import Freepybox
 
 
 async def demo():
