@@ -14,11 +14,13 @@ async def demo():
     # and default token_file location
     fbx = Freepybox()
 
-    # Connect to the freebox with default http protocol
-    # and default port 80
+    # To find out the HTTPS host and port of your freebox, go to
+    # http://mafreebox.freebox.fr/api_version
+
+    # Connect to the freebox
     # Be ready to authorize the application on the Freebox if you use this
     # example for the first time
-    await fbx.open('192.168.0.254')
+    await fbx.open(host='abcdefgh.fbxos.fr', port=1234)
 
     # Dump freebox configuration using system API
     # Extract temperature and mac address
@@ -37,7 +39,6 @@ async def demo():
     # Get the call list and print the last call entry
     fbx_call_list = await fbx.call.get_call_list()
     print(fbx_call_list[0])
-
 
     # Reboot your freebox. This line is commented to avoid any disaster.
     # await fbx.system.reboot()
