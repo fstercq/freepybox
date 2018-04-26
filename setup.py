@@ -25,14 +25,20 @@ def find_version(*file_paths):
     raise RuntimeError("Unable to find version string.")
 
 
+# Get the long description from the README file
+with open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
+
+
 setup(
     name='aiofreepybox',
     version=find_version("aiofreepybox", "__init__.py"),
     packages=find_packages(),
     author='stilllman',
     author_email='luc_touraille@yahoo.fr',
-    description='Provides authentication and asynchronous access to Freebox using OS developer API',
-    long_description=open('README.md').read(),
+    description='Provides asynchronous authentication and access to Freebox servers',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     install_requires=['aiohttp>=3,<4'],
     include_package_data=True,
     url='https://github.com/stilllman/freepybox',
@@ -45,5 +51,8 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Framework :: AsyncIO',
+        'Intended Audience :: Developers',
+        'Intended Audience :: System Administrators',
+        'Topic :: Home Automation',
     ],
 )

@@ -1,2 +1,4 @@
+graft aiofreepybox
+include *.py
 include *.md
-include aiofreepybox/freebox_root_ca.pem
+include LICENSE.txt
