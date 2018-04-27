@@ -41,7 +41,7 @@ async def reboot()
     # Properly close the session.
 	await fbx.close()
 ```
-Have a look at the [example.py](https://github.com/stilllman/freepybox/blob/master/example.py) for a more complete overview.
+Have a look at the [example.py](https://github.com/stilllman/freepybox/blob/aiofreepybox/example.py) for a more complete overview.
 
 Resources
 ---------

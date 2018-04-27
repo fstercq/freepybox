@@ -41,7 +41,7 @@ setup(
     long_description_content_type='text/markdown',
     install_requires=['aiohttp>=3,<4'],
     include_package_data=True,
-    url='https://github.com/stilllman/freepybox',
+    url='https://github.com/stilllman/freepybox/tree/aiofreepybox',
     keywords='freebox async',
     classifiers=[
         'Programming Language :: Python',
