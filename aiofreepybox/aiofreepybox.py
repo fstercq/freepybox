@@ -21,6 +21,7 @@ from aiofreepybox.api.lan import Lan
 from aiofreepybox.api.wifi import Wifi
 from aiofreepybox.api.fs import Fs
 from aiofreepybox.api.call import Call
+from aiofreepybox.api.connection import Connection
 
 
 # Token file default location
@@ -71,6 +72,7 @@ class Freepybox:
         self.wifi = Wifi(self._access)
         self.fs = Fs(self._access)
         self.call = Call(self._access)
+        self.connection = Connection(self._access)
 
     async def close(self):
         '''
