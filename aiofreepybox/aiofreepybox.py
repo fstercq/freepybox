@@ -53,14 +53,14 @@ class Freepybox:
         and instantiate freebox modules
         '''
         if not self._is_app_desc_valid(self.app_desc):
-            raise InvalidTokenError('invalid application descriptor')
+            raise InvalidTokenError('Invalid application descriptor')
 
         cert_path = os.path.join(os.path.dirname(__file__), 'freebox_certificates.pem')
         ssl_ctx = ssl.create_default_context()
         ssl_ctx.load_verify_locations(cafile=cert_path)
 
         conn = aiohttp.TCPConnector(ssl_context=ssl_ctx)
-        self.session = aiohttp.ClientSession(connector=conn)
+        self.session = aiohttp.ClientSession(connector=conn, raise_for_status=True)
 
         self._access = await self._get_freebox_access(host, port, self.api_version, self.token_file, self.app_desc, self.timeout)
 
@@ -79,7 +79,7 @@ class Freepybox:
         Close the freebox session
         '''
         if self._access is None:
-            raise NotOpenError('Freebox is Not opened')
+            raise NotOpenError('Freebox is not open')
 
         await self._access.post('login/logout')
         await self.session.close()
@@ -110,7 +110,7 @@ class Freepybox:
 
                 # denied status = authorization failed
                 if status == 'denied':
-                    raise AuthorizationError('the app_token is invalid or has been revoked')
+                    raise AuthorizationError('The app token is invalid or has been revoked')
 
                 # Pending status : user must accept the app request on the freebox
                 elif status == 'pending':
@@ -121,7 +121,7 @@ class Freepybox:
 
                 # timeout = authorization failed
                 elif status == 'timeout':
-                    raise AuthorizationError('timeout')
+                    raise AuthorizationError('Authorization timed out')
 
             logger.info('Application authorization granted')
 
@@ -169,7 +169,8 @@ class Freepybox:
 
         # raise exception if resp.success != True
         if not resp.get('success'):
-            raise AuthorizationError('authentification failed')
+            raise AuthorizationError('Authorization failed (APIResponse: {0})'
+                                     .format(json.dumps(resp)))
 
         app_token = resp['result']['app_token']
         track_id = resp['result']['track_id']
@@ -188,7 +189,7 @@ class Freepybox:
 
     def _readfile_app_token(self, file):
         """
-        Read the application token in g_app_auth_file file.
+        Read the application token in the authentication file.
         Returns (app_token, track_id, app_desc)
         """
         try:
@@ -221,7 +222,8 @@ class Freepybox:
 
         # raise exception if resp.success != True
         if not resp.get('success'):
-            raise AuthorizationError('get_session_token failed')
+            raise AuthorizationError('Starting session failed (APIResponse: {0})'
+                                     .format(json.dumps(resp)))
 
         session_token = resp.get('result').get('session_token')
         session_permissions = resp.get('result').get('permissions')
@@ -238,7 +240,8 @@ class Freepybox:
 
         # raise exception if resp.success != True
         if not resp.get('success'):
-            raise AuthorizationError('get_challenge failed')
+            raise AuthorizationError('Getting challenge failed (APIResponse: {0})'
+                                     .format(json.dumps(resp)))
 
         return resp['result']['challenge']
 

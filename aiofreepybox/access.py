@@ -19,10 +19,10 @@ class Access:
         resp = await r.json()
 
         if not resp['success']:
-            raise HttpRequestError(resp['error_code'])
+            raise HttpRequestError('GET request failed (APIResponse: {0})'
+                                   .format(json.dumps(resp)))
 
-        if 'result' in resp:
-            return resp['result']
+        return resp['result'] if 'result' in resp else None
 
     async def post(self, end_url, payload=None):
         '''
@@ -34,10 +34,10 @@ class Access:
         resp = await r.json()
 
         if not resp['success']:
-            raise HttpRequestError(resp['error_code'])
+            raise HttpRequestError('POST request failed (APIResponse: {0})'
+                                   .format(json.dumps(resp)))
 
-        if 'result' in resp:
-            return resp['result']
+        return resp['result'] if 'result' in resp else None
 
     async def put(self, end_url, payload=None):
         '''
@@ -49,7 +49,7 @@ class Access:
         resp = await r.json()
 
         if not resp['success']:
-            raise HttpRequestError(resp['error_code'])
+            raise HttpRequestError('PUT request failed (APIResponse: {0})'
+                                   .format(json.dumps(resp)))
 
-        if 'result' in resp:
-            return resp['result']
+        return resp['result'] if 'result' in resp else None
