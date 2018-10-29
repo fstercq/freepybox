@@ -173,8 +173,7 @@ class Freepybox:
         """
         Store the application token in g_app_auth_file file
         """
-        d = app_desc
-        d.update({'app_token': app_token, 'track_id': track_id})
+        d = {**app_desc, 'app_token': app_token, 'track_id': track_id}
 
         with open(file, 'w') as f:
             json.dump(d, f)
