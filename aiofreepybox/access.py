@@ -78,6 +78,7 @@ class Access:
         '''
         if not self.session_token:
             await self._refresh_session_token()
+
         url = urljoin(self.base_url, end_url)
         request_params = {
             **kwargs,
@@ -87,7 +88,7 @@ class Access:
         r = await verb(url, **request_params)
         resp = await r.json()
 
-        if resp.get('error_code') == 'auth_required':
+        if resp.get('error_code') in ['auth_required', "invalid_session"]:
             await self._refresh_session_token()
             request_params["headers"] = self._get_headers()
             r = await verb(url, **request_params)
