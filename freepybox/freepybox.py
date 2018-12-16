@@ -11,6 +11,7 @@ import freepybox
 from freepybox.exceptions import *
 from freepybox.access import Access
 from freepybox.api.system import System
+from freepybox.api.connection import Connection
 from freepybox.api.dhcp import Dhcp
 from freepybox.api.switch import Switch
 from freepybox.api.lan import Lan
@@ -56,6 +57,7 @@ class Freepybox:
 
         # Instantiate freebox modules
         self.system = System(self._access)
+        self.connection = Connection(self._access)
         self.dhcp = Dhcp(self._access)
         self.switch = Switch(self._access)
         self.lan = Lan(self._access)
