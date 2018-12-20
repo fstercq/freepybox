@@ -46,7 +46,7 @@ print(dhcp_config)
 static_dhcp_leases = fbx.dhcp.get_static_dhcp_lease()
 if static_dhcp_leases:
     file.write("static_dhcp_leases:\n")
-    pprint(static_dhcp_leases)
+    print(static_dhcp_leases)
     file.write(static_dhcp_leases)
     file.write("\n")
 
