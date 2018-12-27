@@ -27,3 +27,24 @@ class Connection:
         Get port_id xDSL stats
         '''
         return self._access.get('connection/xdsl')
+
+    def get_ftth_stats(self):
+        '''
+        Get the current FTTH status
+        '''
+        return self._access.get('connection/ftth')
+
+
+    def get_ipv6_config(self):
+        '''
+        Get the current IPv6 Connection configuration
+        '''
+        return self._access.get('connection/ipv6/config')
+
+
+    def set_ipv6_config(self, conf):
+        '''
+        SUpdate the IPv6 Connection configuration
+        '''
+        return self._access.put('connection/ipv6/config', conf)
+
