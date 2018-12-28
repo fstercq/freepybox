@@ -20,6 +20,7 @@ from freepybox.api.fs import Fs
 from freepybox.api.fsnav import Fsnav
 from freepybox.api.call import Call
 from freepybox.api.fw import Fw
+from freepybox.api.phone import Phone
 
 
 # Token file default location
@@ -67,6 +68,7 @@ class Freepybox:
         self.call = Call(self._access)
         self.fsnav = Fsnav(self._access)
         self.fw = Fw(self._access)
+        self.phone = Phone(self._access)
 
 
     def close(self):
