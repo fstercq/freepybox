@@ -45,6 +45,7 @@ class Freepybox:
         self.api_version = api_version
         self.timeout = timeout
         self.app_desc = app_desc
+        self._access = None
 
     async def open(self, host, port):
         '''
@@ -59,7 +60,7 @@ class Freepybox:
         ssl_ctx.load_verify_locations(cafile=cert_path)
 
         conn = aiohttp.TCPConnector(ssl_context=ssl_ctx)
-        self.session = aiohttp.ClientSession(connector=conn)
+        self._session = aiohttp.ClientSession(connector=conn)
 
         self._access = await self._get_freebox_access(host, port, self.api_version, self.token_file, self.app_desc, self.timeout)
 
@@ -81,7 +82,26 @@ class Freepybox:
             raise NotOpenError('Freebox is not open')
 
         await self._access.post('login/logout')
-        await self.session.close()
+        await self._session.close()
+
+    async def get_permissions(self):
+        '''
+        Returns the permissions for this app.
+
+        The permissions are returned as a dictionary key->boolean where the
+        keys are the permission identifier (cf. the constants PERMISSION_*).
+        A permission not listed in the returned permissions is equivalent to
+        having this permission set to false.
+
+        Note that the permissions are the one the app had when the session was
+        opened. If they have been changed in the meantime, they may be outdated
+        until the session token is refreshed.
+        If the session has not been opened yet, returns None.
+        '''
+        if self._access:
+            return await self._access.get_permissions()
+        else:
+            return None
 
     async def _get_freebox_access(self, host, port, api_version, token_file, app_desc, timeout=10):
         '''
@@ -129,7 +149,7 @@ class Freepybox:
             logger.info('Application token file was generated: {0}'.format(token_file))
 
         # Create freebox http access module
-        fbx_access = Access(self.session, base_url, app_token, app_desc['app_id'], timeout)
+        fbx_access = Access(self._session, base_url, app_token, app_desc['app_id'], timeout)
 
         return fbx_access
 
@@ -144,7 +164,7 @@ class Freepybox:
             denied 	    the user denied the authorization request
         '''
         url = urljoin(base_url, 'login/authorize/{0}'.format(track_id))
-        r = await self.session.get(url, timeout=timeout)
+        r = await self._session.get(url, timeout=timeout)
         resp = await r.json()
         return resp['result']['status']
 
@@ -156,7 +176,7 @@ class Freepybox:
         # Get authentification token
         url = urljoin(base_url, 'login/authorize/')
         data = json.dumps(app_desc)
-        r = await self.session.post(url, data=data, timeout=timeout)
+        r = await self._session.post(url, data=data, timeout=timeout)
         resp = await r.json()
 
         # raise exception if resp.success != True

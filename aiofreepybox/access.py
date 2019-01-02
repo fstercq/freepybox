@@ -14,6 +14,7 @@ class Access:
         self.app_id = app_id
         self.timeout = http_timeout
         self.session_token = None
+        self.session_permissions = None
 
     async def _get_challenge(self, base_url, timeout=10):
         '''
@@ -68,6 +69,7 @@ class Access:
         logger.info('Session opened')
         logger.info('Permissions: ' + str(session_permissions))
         self.session_token = session_token
+        self.session_permissions = session_permissions
 
     def _get_headers(self):
         return {'X-Fbx-App-Auth': self.session_token}
@@ -122,3 +124,11 @@ class Access:
         '''
         data = json.dumps(payload) if payload is not None else None
         return await self._perform_request(self.session.put, end_url, data=data)
+
+    async def get_permissions(self):
+        '''
+        Returns the permissions for this session/app.
+        '''
+        if not self.session_permissions:
+            await self._refresh_session_token()
+        return self.session_permissions
