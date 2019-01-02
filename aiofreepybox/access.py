@@ -95,8 +95,11 @@ class Access:
             resp = await r.json()
 
         if not resp['success']:
-            raise HttpRequestError('Request failed (APIResponse: {0})'
-                                   .format(json.dumps(resp)))
+            errMsg = 'Request failed (APIResponse: {0})'.format(json.dumps(resp))
+            if resp.get('error_code') == 'insufficient_rights':
+                raise InsufficientPermissionsError(errMsg)
+            else:
+                raise HttpRequestError(errMsg)
 
         return resp['result'] if 'result' in resp else None
 
