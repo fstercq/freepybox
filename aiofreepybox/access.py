@@ -125,6 +125,13 @@ class Access:
         data = json.dumps(payload) if payload is not None else None
         return await self._perform_request(self.session.put, end_url, data=data)
 
+    async def delete(self, end_url, payload=None):
+        '''
+        Send delete request and return results
+        '''
+        data = json.dumps(payload) if payload is not None else None
+        return await self._perform_request(self.session.delete, end_url, data=data)
+
     async def get_permissions(self):
         '''
         Returns the permissions for this session/app.
