@@ -37,7 +37,7 @@ class Wifi:
         Update wifi access point with the specific id
         '''
         self._access.get('wifi/ap/{0}'.format(ap_id), conf)
-
+        
 
     def get_ap_allowed_channel(self, ap_id):
         '''
@@ -59,3 +59,20 @@ class Wifi:
         '''
         return self._access.get('wifi/ap/{0}/neighbors/'.format(ap_id))
 
+    def get_bss_list(self):
+        '''
+        Get wifi BSS list
+        '''
+        return self._access.get('wifi/bss/')
+
+    def get_bss(self, ap_id):
+        '''
+        Get wifi BSS with the specific id
+        '''
+        return self._access.get('wifi/bss/{0}'.format(ap_id))
+
+    def set_bss(self, ap_id, conf):
+        '''
+        Update wifi BSS with the specific id
+        '''
+        self._access.get('wifi/bss/{0}'.format(ap_id), conf)

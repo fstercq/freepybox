@@ -48,3 +48,15 @@ class Connection:
         '''
         return self._access.put('connection/ipv6/config', conf)
 
+    def get_config(self):
+        '''
+        Get the current Connection configuration
+        '''
+        return self._access.get('connection/config')
+
+    def set_config(self, conf):
+        '''
+        SUpdate the Connection configuration
+        '''
+        return self._access.put('connection/config', conf)
+
