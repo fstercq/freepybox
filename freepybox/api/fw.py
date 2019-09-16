@@ -21,3 +21,14 @@ class Fw:
         '''
         return self._access.delete('fw/redir/{0}'.format(id))
 
+    def get_dmz_config(self):
+        '''
+        Getting the dmz configuration
+        '''
+        return self._access.get('fw/dmz/')
+
+    def set_dmz_config(self, conf):
+        '''
+        Setting the dmz configuration
+        '''
+        return self._access.put('fw/dmz/',conf)

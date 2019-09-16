@@ -21,6 +21,8 @@ from freepybox.api.fsnav import Fsnav
 from freepybox.api.call import Call
 from freepybox.api.fw import Fw
 from freepybox.api.phone import Phone
+from freepybox.api.airmedia import Airmedia
+from freepybox.api.freeplugs import Freeplugs
 
 
 # Token file default location
@@ -69,6 +71,8 @@ class Freepybox:
         self.fsnav = Fsnav(self._access)
         self.fw = Fw(self._access)
         self.phone = Phone(self._access)
+        self.airmedia = Airmedia(self._access)
+        self.freeplugs = Freeplugs(self._access)
 
 
     def close(self):
