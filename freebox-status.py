@@ -26,7 +26,6 @@ print('');
 print('                      Etat de la Freebox');
 print('______________________________________________________________________');
 print('');
-
 print('');
 print('Informations générales :');
 print('========================');
@@ -45,14 +44,65 @@ fbx_bss = fbx.wifi.get_bss_list();
 lan_config = fbx.lan.get_config();
 dmz_config = fbx.fw.get_dmz_config();
 fbx_static_dhcp = fbx.dhcp.get_static_dhcp_lease();
+fbx_dyn_dhcp = fbx.dhcp.get_dynamic_dhcp_lease();
 fbx_ports = fbx.fw.get_forward()
 fbx_switch_status = fbx.switch.get_status()
+fbx_media = fbx.airmedia.get_config()
+fbx_freeplugs = fbx.freeplugs.get_freeplugs_list()
 
 print('  Modèle                         {0}'.format(fbx_config['board_name']));
 print('  Version du firmware            {0}'.format(fbx_config['firmware_version']));
+print('  Numero de serie                {0}'.format(fbx_config['serial']));
 print('  Mode de connection             {0}'.format(fbx_connection_status_details['media']));
+status = fbx_connection_status_details['state'];
+if status == 'up':
+    status_str = 'Ok'
+elif status == 'down':
+    status_str = 'Off'
+elif status == 'going_up':
+    status_str = 'Initialisation'
+elif status == 'going_down':
+    status_str = 'En cours de fermeture'
+else :
+    status_str = 'Inconnue'
+print('  Etat de la connection          {0}'.format(status_str));
+if fbx_config['box_authenticated'] == True:
+    auth = 'Ok'
+else :
+    auth = 'Non'
+print('  Etat de l\'authentification     {0}'.format(auth));
+status = fbx_config['disk_status'];
+if status == 'active':
+    status_str = 'Actif'
+else :
+    status_str = 'Inactif'
+print('  Statut du disque               {0}'.format(status_str));
 print('  Temps depuis la mise en route  {0}'.format(fbx_config['uptime']));
+bytes_down = fbx_connection_status_details['bytes_down']
+bytes_up = fbx_connection_status_details['bytes_up']
+if bytes_down < 1000000 and bytes_up < 1000000:
+    units = 'Ko'
+    factor = 1000
+elif bytes_down < 1000000000 and bytes_up < 1000000000:
+    units = 'Mo'
+    factor = 1000000
+else :
+    units = 'Go'
+    factor = 1000000000
+bytes_down /= factor
+bytes_up /= factor
+print('  Totaux entrant/sortant         {0:.1f}/{1:.1f} {2}'.format(bytes_down,bytes_up,units))
 print('');
+
+print('');
+print('Informations secondaires :');
+print('==========================');
+print('');
+
+print('  Temperature CPU B              {0} C'.format(fbx_config['temp_cpub']))
+print('  Temperature CPU M              {0} C'.format(fbx_config['temp_cpum']))
+print('  Temperature Switch             {0} C'.format(fbx_config['temp_sw']))
+print('  Vitesse ventilateur            {0} rpm'.format(fbx_config['fan_rpm']))
 
 print('');
 print('Téléphone :');
@@ -72,9 +122,20 @@ print('  Sonnerie                       {0}'.format(ring_status));
 print('');
 
 print('');
+print('Services :');
+print('==========');
+print('');
+
+status = fbx_media['enabled'];
+if status == 'active':
+    status_str = 'Activé';
+else :
+    status_str = 'Désactivé';
+print('  AirMedia                       {0}'.format(status_str))
+
+print('');
 print('Ftth :');
 print('======');
-print('');
 
 print('                         Descendant         Montant');
 print('                         --                 --');
@@ -85,8 +146,8 @@ print(' Journal de connexion ftth');
 print(' ---------------------------');
 print('');
 
-print('  Date                      Type      Nom       Etat        Débit (Mb/s)');
-print('  --                        --        --        --          --');
+print('  Date                      Type      Nom           Etat        Débit (Mb/s)');
+print('  --                        --        --            --          --');
 index = 0
 while index < len(fbx_connection_logs):
     dat = time.strftime("%c", time.localtime(fbx_connection_logs[index]['date']));
@@ -97,8 +158,13 @@ while index < len(fbx_connection_logs):
         typ_str = 'Connexion';
     else :
         typ_str = typ;
-    name = fbx_connection_logs[index][typ];
+    name = fbx_connection_logs[index][typ].upper();
     state = fbx_connection_logs[index]['state'];
+    underscore = name.find('_');
+    if underscore != -1:
+      name = name.replace('_',' (',1);
+      name = name.replace('PUB','public');
+      name += ')';
     if state == 'up':
         status = 'Connexion';
     else :
@@ -106,9 +172,9 @@ while index < len(fbx_connection_logs):
     if typ == 'link':
         down = fbx_connection_logs[index]['bw_down']/1000000;
         up = fbx_connection_logs[index]['bw_up']/1000000
-        print('  {0}  {1:10.10s}{2:10.10s}{3:11.11s} {4:.0f}/{5:.0f}'.format(dat,typ_str,name,status,down,up));
+        print('  {0}  {1:10.10s}{2:14.14s}{3:11.11s} {4:.0f}/{5:.0f}'.format(dat,typ_str,name,status,down,up));
     else :
-        print('  {0}  {1:10.10s}{2:10.10s}{3:11.11s}'.format(dat,typ_str,name,status));
+        print('  {0}  {1:10.10s}{2:14.14s}{3:11.11s}'.format(dat,typ_str,name,status));
     index+=1
 print('');
 
@@ -184,20 +250,42 @@ else :
   status = 'Désactivé';
 print('  Serveur DHCP                   {0}'.format(status));
 print('  Plage d\'adresses dynamique     {0} - {1}'.format(fbx_dhcp_config['ip_range_start'],fbx_dhcp_config['ip_range_end']));
+print('  Netmask                        {0}'.format(fbx_dhcp_config['netmask']));
+#dns_list = ' '.join(fbx_dhcp_config['dns']).split()
+dns_list = [x for x in fbx_dhcp_config['dns'] if x != '']
+print('  DNS                            {0}'.format(*dns_list));
 
-print('');
-print(' Attributions dhcp :');
-print(' -------------------');
-
-print(''); 
-print('  Hostname               Adresse MAC            Adresse IP');
-print('  --                     --                     --');
 index = 0
 while index < len(fbx_static_dhcp):
+    if index == 0:
+        print('');
+        print(' Attributions dhcp statiques :');
+        print(' ---------------------------');
+        
+        print(''); 
+        print('  Hostname               Adresse MAC            Adresse IP');
+        print('  --                     --                     --');
     mac = fbx_static_dhcp[index]['mac'];
     hostname = fbx_static_dhcp[index]['hostname'];
     ip = fbx_static_dhcp[index]['ip'];
     print('  {0:21.21s}  {1:21.21s}  {2:21.21s}'.format(hostname,mac,ip));
+    index += 1;
+
+index = 0
+while index < len(fbx_dyn_dhcp):
+    if fbx_dyn_dhcp[index]['is_static'] == False :
+        if index == 0 :
+            print('');
+            print(' Attributions dhcp dynamiques :');
+            print(' ----------------------------');
+            
+            print(''); 
+            print('  Hostname               Adresse MAC            Adresse IP');
+            print('  --                     --                     --');
+        mac = fbx_dyn_dhcp[index]['mac'];
+        hostname = fbx_dyn_dhcp[index]['hostname'];
+        ip = fbx_dyn_dhcp[index]['ip'];
+        print('  {0:21.21s}  {1:21.21s}  {2:21.21s}'.format(hostname,mac,ip));
     index += 1;
 
 print('');
@@ -225,10 +313,46 @@ while index < len(fbx_ports):
 print('');
 print(' Interfaces réseau :');
 print(' -------------------');
-
 print('');
-print('                         Lien           Débit entrant  Débit sortant');
-print('                         --             --             --');
+print('  Freeplug           ID                 Lien  Role     Débit entrant            Débit sortant');
+print('  --                 --                 --    --       --                       --');
+fp_idx = 0
+while fp_idx < len(fbx_freeplugs):
+    mainid = fbx_freeplugs[fp_idx]['id']
+    index = 0
+    if 'members' in fbx_freeplugs[fp_idx]:
+        while index < len(fbx_freeplugs[fp_idx]['members']):
+            fpid = fbx_freeplugs[fp_idx]['members'][index]['id'];
+            status = fbx_freeplugs[fp_idx]['members'][index]['has_network'];
+            if status == True:
+                stat = "Ok"
+            else:
+                stat = "Off"
+                role = fbx_freeplugs[fp_idx]['members'][index]['net_role'];
+                if role == 'cco':
+                    role = 'Coord. '
+                elif role == 'pco':
+                    role = 'PCoord.'
+                else:
+                    role = 'Station'
+                if status == True:
+                    rx = fbx_freeplugs[fp_idx]['members'][index]['rx_rate']
+                    tx = fbx_freeplugs[fp_idx]['members'][index]['tx_rate']
+                    if rx == -1:
+                        rx = 0
+                    if tx == -1:
+                        tx = 0
+                    rx_str = '{0:.0f} Mb/s'.format(rx)
+                    tx_str = '{0:.0f} Mb/s'.format(tx)
+                    print('  {0:17.17s}  {1:17.17s}  {2:4.4s}  {3:7.7s}  {4:23.23s}  {5:23.23s}'.format(mainid, fpid, stat, role, rx_str.ljust(23," "), tx_str.ljust(23," ")));
+                else :
+                    print('  {0:17.17s}  {1:17.17s}  Non connecté'.format(mainid,fpid));
+            index += 1;
+    fp_idx += 1;
+    
+print('');
+print('                         Lien           Débit entrant            Débit sortant');
+print('                         --             --                       --');
 
 # Mise a jour des debits tous en meme temps pour qu ils correspondent... mais ca ne fonctionne pas..!
 stats = [None] * len(fbx_switch_status);
@@ -239,11 +363,20 @@ while index < len(fbx_switch_status):
 fbx_connection_status_details = fbx.connection.get_status_details()
 
 rx = fbx_connection_status_details['rate_down']/1024
+rxb = rx*8/1024
 tx = fbx_connection_status_details['rate_up']/1024
-rx_str = '{0:.0f} ko/s'.format(rx)
-tx_str = '{0:.0f} ko/s'.format(tx)
-print('  {0:21.21s}  {1:13.13s}  {2}  {3}'.format('WAN', '', rx_str.ljust(13," "), tx_str.ljust(13," ")));
+txb = tx*8/1024
+rx_str = '{0:.0f} ko/s ({1:.1f} Mb/s)'.format(rx, rxb)
+tx_str = '{0:.0f} ko/s ({1:.1f} Mb/s)'.format(tx, txb)
+print('  {0:21.21s}  {1:13.13s}  {2}  {3}'.format('WAN', '', rx_str.ljust(23," "), tx_str.ljust(23," ")));
 index = 0
+fp_idx = 0
+mac_fp_list = []
+while fp_idx < len(fbx_freeplugs):
+    if 'members' in fbx_freeplugs[fp_idx]:
+        maclist = fbx_freeplugs[fp_idx]['members'][:][:]
+        mac_fp_list = [ (d['id']) for d in maclist]
+    fp_idx += 1;
 while index < len(fbx_switch_status):
     name = fbx_switch_status[index]['name'];
     link = fbx_switch_status[index]['mode'];
@@ -252,7 +385,11 @@ while index < len(fbx_switch_status):
         tx = stats[index]['tx_bytes_rate']/1024
         rx_str = '{0:.0f} ko/s'.format(rx)
         tx_str = '{0:.0f} ko/s'.format(tx)
-        print('  {0:21.21s}  {1:13.13s}  {2}  {3}'.format(name, link, rx_str.ljust(13," "), tx_str.ljust(13," ")));
+        print('  {0:21.21s}  {1:13.13s}  {2}  {3}'.format(name, link, rx_str.ljust(23," "), tx_str.ljust(23," ")));
+        if 'mac_list' in fbx_switch_status[index]:
+            for x in fbx_switch_status[index]['mac_list']:
+                if x['mac'] not in mac_fp_list:
+                    print('    {0}'.format(x['hostname']))
     else :
         print('  {0:21.21s}  Non connecté'.format(name));
     index += 1;
