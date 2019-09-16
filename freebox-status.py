@@ -328,25 +328,25 @@ while fp_idx < len(fbx_freeplugs):
                 stat = "Ok"
             else:
                 stat = "Off"
-                role = fbx_freeplugs[fp_idx]['members'][index]['net_role'];
-                if role == 'cco':
-                    role = 'Coord. '
-                elif role == 'pco':
-                    role = 'PCoord.'
-                else:
-                    role = 'Station'
-                if status == True:
-                    rx = fbx_freeplugs[fp_idx]['members'][index]['rx_rate']
-                    tx = fbx_freeplugs[fp_idx]['members'][index]['tx_rate']
-                    if rx == -1:
-                        rx = 0
-                    if tx == -1:
-                        tx = 0
-                    rx_str = '{0:.0f} Mb/s'.format(rx)
-                    tx_str = '{0:.0f} Mb/s'.format(tx)
-                    print('  {0:17.17s}  {1:17.17s}  {2:4.4s}  {3:7.7s}  {4:23.23s}  {5:23.23s}'.format(mainid, fpid, stat, role, rx_str.ljust(23," "), tx_str.ljust(23," ")));
-                else :
-                    print('  {0:17.17s}  {1:17.17s}  Non connecté'.format(mainid,fpid));
+            role = fbx_freeplugs[fp_idx]['members'][index]['net_role'];
+            if role == 'cco':
+                role = 'Coord. '
+            elif role == 'pco':
+                role = 'PCoord.'
+            else:
+                role = 'Station'
+            if status == True:
+                rx = fbx_freeplugs[fp_idx]['members'][index]['rx_rate']
+                tx = fbx_freeplugs[fp_idx]['members'][index]['tx_rate']
+                if rx == -1:
+                    rx = 0
+                if tx == -1:
+                    tx = 0
+                rx_str = '{0:.0f} Mb/s'.format(rx)
+                tx_str = '{0:.0f} Mb/s'.format(tx)
+                print('  {0:17.17s}  {1:17.17s}  {2:4.4s}  {3:7.7s}  {4:23.23s}  {5:23.23s}'.format(mainid, fpid, stat, role, rx_str.ljust(23," "), tx_str.ljust(23," ")));
+            else :
+                print('  {0:17.17s}  {1:17.17s}  Non connecté'.format(mainid,fpid));
             index += 1;
     fp_idx += 1;
     
