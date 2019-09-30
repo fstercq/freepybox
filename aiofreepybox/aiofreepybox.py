@@ -24,6 +24,7 @@ from aiofreepybox.api.connection import Connection
 from aiofreepybox.api.nat import Nat
 from aiofreepybox.api.notifications import Notifications
 from aiofreepybox.api.rrd import Rrd
+from aiofreepybox.api.upnpav import Upnpav
 
 
 # Token file default location
@@ -79,6 +80,7 @@ class Freepybox:
         self.nat = Nat(self._access)
         self.notifications = Notifications(self._access)
         self.rrd = Rrd(self._access)
+        self.upnpav = Upnpav(self._access)
 
     async def close(self):
         '''
