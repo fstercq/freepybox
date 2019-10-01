@@ -22,6 +22,7 @@ from aiofreepybox.api.wifi import Wifi
 from aiofreepybox.api.fs import Fs
 from aiofreepybox.api.call import Call
 from aiofreepybox.api.connection import Connection
+from aiofreepybox.api.parental import Parental
 from aiofreepybox.api.nat import Nat
 from aiofreepybox.api.notifications import Notifications
 from aiofreepybox.api.rrd import Rrd
@@ -80,6 +81,7 @@ class Freepybox:
         self.fs = Fs(self._access)
         self.call = Call(self._access)
         self.connection = Connection(self._access)
+        self.parental = Parental(self._access)
         self.nat = Nat(self._access)
         self.notifications = Notifications(self._access)
         self.rrd = Rrd(self._access)
