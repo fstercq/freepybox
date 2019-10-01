@@ -13,6 +13,7 @@ import aiohttp
 import aiofreepybox
 from aiofreepybox.exceptions import *
 from aiofreepybox.access import Access
+from aiofreepybox.api.tv import Tv
 from aiofreepybox.api.system import System
 from aiofreepybox.api.dhcp import Dhcp
 from aiofreepybox.api.switch import Switch
@@ -70,6 +71,7 @@ class Freepybox:
         self._access = await self._get_freebox_access(host, port, self.api_version, self.token_file, self.app_desc, self.timeout)
 
         # Instantiate freebox modules
+        self.tv = Tv(self._access)
         self.system = System(self._access)
         self.dhcp = Dhcp(self._access)
         self.switch = Switch(self._access)
