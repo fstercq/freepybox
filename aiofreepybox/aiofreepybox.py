@@ -21,6 +21,7 @@ from aiofreepybox.api.lan import Lan
 from aiofreepybox.api.wifi import Wifi
 from aiofreepybox.api.phone import Phone
 from aiofreepybox.api.fs import Fs
+from aiofreepybox.api.freeplug import Freeplug
 from aiofreepybox.api.call import Call
 from aiofreepybox.api.connection import Connection
 from aiofreepybox.api.home import Home
@@ -81,6 +82,7 @@ class Freepybox:
         self.wifi = Wifi(self._access)
         self.phone = Phone(self._access)
         self.fs = Fs(self._access)
+        self.freeplug = Freeplug(self._access)
         self.call = Call(self._access)
         self.connection = Connection(self._access)
         self.home = Home(self._access)
