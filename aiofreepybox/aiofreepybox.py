@@ -23,13 +23,13 @@ from aiofreepybox.api.phone import Phone
 from aiofreepybox.api.fs import Fs
 from aiofreepybox.api.call import Call
 from aiofreepybox.api.connection import Connection
+from aiofreepybox.api.home import Home
 from aiofreepybox.api.parental import Parental
 from aiofreepybox.api.nat import Nat
 from aiofreepybox.api.notifications import Notifications
 from aiofreepybox.api.rrd import Rrd
 from aiofreepybox.api.upnpav import Upnpav
 from aiofreepybox.api.upnpigd import Upnpigd
-
 
 # Token file default location
 token_filename = 'app_auth'
@@ -83,6 +83,7 @@ class Freepybox:
         self.fs = Fs(self._access)
         self.call = Call(self._access)
         self.connection = Connection(self._access)
+        self.home = Home(self._access)
         self.parental = Parental(self._access)
         self.nat = Nat(self._access)
         self.notifications = Notifications(self._access)
