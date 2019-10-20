@@ -18,6 +18,7 @@ from aiofreepybox.api.system import System
 from aiofreepybox.api.dhcp import Dhcp
 from aiofreepybox.api.switch import Switch
 from aiofreepybox.api.lan import Lan
+from aiofreepybox.api.storage import Storage
 from aiofreepybox.api.lcd import Lcd
 from aiofreepybox.api.wifi import Wifi
 from aiofreepybox.api.phone import Phone
@@ -81,6 +82,7 @@ class Freepybox:
         self.dhcp = Dhcp(self._access)
         self.switch = Switch(self._access)
         self.lan = Lan(self._access)
+        self.storage = Storage(self._access)
         self.lcd = Lcd(self._access)
         self.wifi = Wifi(self._access)
         self.phone = Phone(self._access)
