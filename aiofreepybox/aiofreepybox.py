@@ -22,6 +22,7 @@ from aiofreepybox.api.storage import Storage
 from aiofreepybox.api.lcd import Lcd
 from aiofreepybox.api.wifi import Wifi
 from aiofreepybox.api.phone import Phone
+from aiofreepybox.api.ftp import Ftp
 from aiofreepybox.api.fs import Fs
 from aiofreepybox.api.fw import Fw
 from aiofreepybox.api.freeplug import Freeplug
@@ -87,6 +88,7 @@ class Freepybox:
         self.lcd = Lcd(self._access)
         self.wifi = Wifi(self._access)
         self.phone = Phone(self._access)
+        self.ftp = Ftp(self._access)
         self.fs = Fs(self._access)
         self.fw = Fw(self._access)
         self.freeplug = Freeplug(self._access)
