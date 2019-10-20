@@ -30,6 +30,7 @@ from aiofreepybox.api.connection import Connection
 from aiofreepybox.api.home import Home
 from aiofreepybox.api.parental import Parental
 from aiofreepybox.api.nat import Nat
+from aiofreepybox.api.netshare import Netshare
 from aiofreepybox.api.notifications import Notifications
 from aiofreepybox.api.rrd import Rrd
 from aiofreepybox.api.upnpav import Upnpav
@@ -94,6 +95,7 @@ class Freepybox:
         self.home = Home(self._access)
         self.parental = Parental(self._access)
         self.nat = Nat(self._access)
+        self.netshare = Netshare(self._access)
         self.notifications = Notifications(self._access)
         self.rrd = Rrd(self._access)
         self.upnpav = Upnpav(self._access)
