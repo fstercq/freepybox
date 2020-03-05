@@ -45,5 +45,9 @@ class Lan:
         '''
         self._access.put('lan/browser/{0}/{1}'.format(interface, host_id), conf)
 
-
+    def wol(self, data, interface='pub'):
+        '''
+        Wake on lan a device
+        '''
+        return self._access.post('lan/wol/{0}/'.format(interface), data)
 
