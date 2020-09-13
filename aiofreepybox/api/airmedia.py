@@ -23,12 +23,6 @@ class Airmedia:
         "position": 0,
     }
 
-    async def get_airmedia_configuration(self) -> Optional[Dict[str, bool]]:
-        """
-        Get airmedia configuration
-        """
-        return await self._access.get("airmedia/config/")
-
     async def get_airmedia_receivers(self) -> Optional[List[Dict[str, Any]]]:
         """
         Get airmedia receivers
@@ -46,55 +40,40 @@ class Airmedia:
         """
         await self._access.post(f"airmedia/receivers/{receiver_name}/", airmedia_data)
 
+    async def get_airmedia_configuration(self) -> Optional[Dict[str, bool]]:
+        """
+        Get airmedia configuration
+        """
+        return await self._access.get("airmedia/config/")
+
     async def set_airmedia_configuration(
-        self, airmedia_configuration_data: Dict[str, Any]
+        self, airmedia_config: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
         """
         Set airmedia configuration
 
-        airmedia_configuration_data : `dict`
+        airmedia_config : `dict`
         """
-        return await self._access.put("airmedia/config/", airmedia_configuration_data)
+        return await self._access.put("airmedia/config/", airmedia_config)
 
     async def update_airmedia_configuration(
-        self,
-        airmedia_enabled: Optional[bool] = None,
-        airmedia_password: Optional[str] = None,
+        self, enabled: Optional[bool] = None, password: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
         """
         Update airmedia configuration
 
-        airmedia_enabled : `bool`, optional
+        enabled : `bool`, optional
             , Default to None
-        airmedia_password : `str`, optional
+        password : `str`, optional
             , Default to None
         """
 
-        if airmedia_enabled is None and airmedia_password is None:
+        if enabled is None and password is None:
             return None
-        else:
-            airmedia_config: Dict[str, Any] = {}
-            if airmedia_enabled is not None:
-                airmedia_config.update({"enabled": airmedia_enabled})
-            if airmedia_password is not None:
-                airmedia_config.update({"password": airmedia_password})
-        return await self.set_airmedia_configuration(airmedia_config)
 
-    async def airmedia_switch(self, enabled: Optional[bool] = None) -> Optional[bool]:
-        """
-        Airmedia switch
-
-        airmedia_enabled : `bool`, optional
-            , Default to None
-        """
-
-        if enabled is None:
-            config = await self.get_airmedia_configuration()
-            if config is not None:
-                return config["enabled"]
-        else:
-            config = {"enabled": enabled}
-            apply = await self.set_airmedia_configuration(config)
-            if apply is not None:
-                return apply["enabled"]
-        return None
+        config: Dict[str, Any] = {}
+        if enabled is not None:
+            config.update({"enabled": enabled})
+        if password is not None:
+            config.update({"password": password})
+        return await self.set_airmedia_configuration(config)
