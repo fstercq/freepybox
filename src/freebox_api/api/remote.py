@@ -1,3 +1,7 @@
+"""
+Remote API.
+No public documentation available yet.
+"""
 import asyncio
 from asyncio import TimeoutError as Timeout
 from typing import Any
@@ -5,7 +9,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
-from aiohttp import client_exceptions as cl_ex
+from aiohttp import ServerDisconnectedError
 
 from freebox_api.access import Access
 
@@ -95,7 +99,7 @@ class Remote:
         repeat : `int`, optional
             Default to 0
         """
-        key_data = {"code": code, "key": key}
+        key_data: Dict[str, Any] = {"code": code, "key": key}
         if long_press:
             key_data["long"] = "True"
         if repeat:
@@ -108,7 +112,7 @@ class Remote:
         key: str,
         long_press: bool = _DEFAULT_LONG_PRESS,
         repeat: int = _DEFAULT_REPEAT,
-    ):
+    ) -> bool:
         """
         Send Key
 
@@ -171,10 +175,10 @@ class Remote:
             resp = await self._access.session.get(
                 f"http://{self.player_host}{_REMOTE_CONTROL}",
                 params=self.build_key(
-                    code=key_data.get("code"),
-                    key=key_data.get("key"),
-                    long_press=key_data.get("long"),
-                    repeat=key_data.get("repeat"),
+                    code=key_data.get("code"),  # type: ignore
+                    key=key_data.get("key"),  # type: ignore
+                    long_press=key_data.get("long"),  # type: ignore
+                    repeat=key_data.get("repeat"),  # type: ignore
                 ),
                 timeout=_DEFAULT_TIMEOUT,
                 skip_auto_headers=[
@@ -188,7 +192,7 @@ class Remote:
                 await resp.read()
                 if resp.status == _PL_STATUS and resp.content_length == 0:
                     return True
-        except (Timeout, cl_ex.ServerDisconnectedError):
+        except (Timeout, ServerDisconnectedError):
             pass
 
         return False

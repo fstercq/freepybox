@@ -4,9 +4,15 @@ import logging
 import os
 import socket
 import ssl
+from typing import Any
+from typing import Dict
+from typing import Optional
+from typing import Tuple
+from typing import Union
 from urllib.parse import urljoin
 
-import aiohttp
+from aiohttp import ClientSession
+from aiohttp import TCPConnector
 
 import freebox_api
 from freebox_api.access import Access
@@ -40,12 +46,12 @@ from freebox_api.exceptions import InvalidTokenError
 from freebox_api.exceptions import NotOpenError
 
 # Token file default location
-token_filename = "app_auth"  # noqa S105
-token_dir = os.path.dirname(os.path.abspath(__file__))
-token_file = os.path.join(token_dir, token_filename)
+DEFAULT_TOKEN_FILENAME = "app_auth"  # noqa S105
+DEFAULT_TOKEN_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_TOKEN_FILE = os.path.join(DEFAULT_TOKEN_DIRECTORY, DEFAULT_TOKEN_FILENAME)
 
 # Default application descriptor
-app_desc = {
+DEFAULT_APP_DESC: Dict[str, str] = {
     "app_id": "aiofpbx",
     "app_name": "freebox-api",
     "app_version": freebox_api.__version__,
@@ -57,15 +63,20 @@ logger = logging.getLogger(__name__)
 
 class Freepybox:
     def __init__(
-        self, app_desc=app_desc, token_file=token_file, api_version="v3", timeout=10
+        self,
+        app_desc: Dict[str, str] = DEFAULT_APP_DESC,
+        token_file: str = DEFAULT_TOKEN_FILE,
+        api_version: str = "v3",
+        timeout: int = 10,
     ):
-        self.token_file = token_file
-        self.api_version = api_version
-        self.timeout = timeout
-        self.app_desc = app_desc
-        self._access = None
+        self.app_desc: Dict[str, str] = app_desc
+        self.token_file: str = token_file
+        self.api_version: str = api_version
+        self.timeout: int = timeout
+        self._session: ClientSession
+        self._access: Access
 
-    async def open(self, host, port):
+    async def open(self, host: str, port: str) -> None:
         """
         Open a session to the freebox, get a valid access module
         and instantiate freebox modules
@@ -77,8 +88,8 @@ class Freepybox:
         ssl_ctx = ssl.create_default_context()
         ssl_ctx.load_verify_locations(cafile=cert_path)
 
-        conn = aiohttp.TCPConnector(ssl_context=ssl_ctx)
-        self._session = aiohttp.ClientSession(connector=conn)
+        conn = TCPConnector(ssl_context=ssl_ctx)
+        self._session = ClientSession(connector=conn)
 
         self._access = await self._get_freebox_access(
             host, port, self.api_version, self.token_file, self.app_desc, self.timeout
@@ -111,17 +122,17 @@ class Freepybox:
         self.upnpav = Upnpav(self._access)
         self.upnpigd = Upnpigd(self._access)
 
-    async def close(self):
+    async def close(self) -> None:
         """
         Close the freebox session
         """
-        if self._access is None:
+        if not self._access:
             raise NotOpenError("Freebox is not open")
 
         await self._access.post("login/logout")
         await self._session.close()
 
-    async def get_permissions(self):
+    async def get_permissions(self) -> Optional[Dict[str, bool]]:
         """
         Returns the permissions for this app.
 
@@ -137,17 +148,22 @@ class Freepybox:
         """
         if self._access:
             return await self._access.get_permissions()
-        else:
-            return None
+        return None
 
     async def _get_freebox_access(
-        self, host, port, api_version, token_file, app_desc, timeout=10
-    ):
+        self,
+        host: str,
+        port: str,
+        api_version: str,
+        token_file: str,
+        app_desc: Dict[str, str],
+        timeout: int = 10,
+    ) -> Access:
         """
         Returns an access object used for HTTP requests.
         """
 
-        base_url = self._get_base_url(host, port, api_version)
+        base_url: str = self._get_base_url(host, port, api_version)
 
         # Read stored application token
         logger.info("Read application authorization file")
@@ -163,7 +179,7 @@ class Freepybox:
 
             # Check the authorization status
             out_msg_flag = False
-            status = None
+            status: Optional[str] = None
             while status != "granted":
                 status = await self._get_authorization_status(
                     base_url, track_id, timeout
@@ -199,7 +215,9 @@ class Freepybox:
 
         return fbx_access
 
-    async def _get_authorization_status(self, base_url, track_id, timeout):
+    async def _get_authorization_status(
+        self, base_url: str, track_id: int, timeout: int
+    ) -> str:
         """
         Get authorization status of the application token
 
@@ -210,12 +228,14 @@ class Freepybox:
             granted: the app_token is valid and can be used to open a session
             denied: the user denied the authorization request
         """
-        url = urljoin(base_url, "login/authorize/{0}".format(track_id))
-        r = await self._session.get(url, timeout=timeout)
-        resp = await r.json()
-        return resp["result"]["status"]
+        url = urljoin(base_url, f"login/authorize/{track_id}")
+        resp = await self._session.get(url, timeout=timeout)
+        resp_data = await resp.json()
+        return str(resp_data["result"]["status"])
 
-    async def _get_app_token(self, base_url, app_desc, timeout=10):
+    async def _get_app_token(
+        self, base_url: str, app_desc: Dict[str, str], timeout: int = 10
+    ) -> Tuple[str, int]:
         """
         Get the application token from the freebox
         Returns (app_token, track_id)
@@ -223,40 +243,48 @@ class Freepybox:
         # Get authentification token
         url = urljoin(base_url, "login/authorize/")
         data = json.dumps(app_desc)
-        r = await self._session.post(url, data=data, timeout=timeout)
-        resp = await r.json()
+        resp = await self._session.post(url, data=data, timeout=timeout)
+        resp_data = await resp.json()
 
         # raise exception if resp.success != True
-        if not resp.get("success"):
+        if not resp_data.get("success"):
             raise AuthorizationError(
-                "Authorization failed (APIResponse: {0})".format(json.dumps(resp))
+                "Authorization failed (APIResponse: {0})".format(json.dumps(resp_data))
             )
 
-        app_token = resp["result"]["app_token"]
-        track_id = resp["result"]["track_id"]
+        app_token: str = resp_data["result"]["app_token"]
+        track_id: int = resp_data["result"]["track_id"]
 
         return (app_token, track_id)
 
-    def _writefile_app_token(self, app_token, track_id, app_desc, file):
+    def _writefile_app_token(
+        self, app_token: str, track_id: int, app_desc: Dict[str, str], token_file: str
+    ) -> None:
         """
         Store the application token in g_app_auth_file file
         """
-        d = {**app_desc, "app_token": app_token, "track_id": track_id}
+        file_content: Dict[str, Union[str, int]] = {
+            **app_desc,
+            "app_token": app_token,
+            "track_id": track_id,
+        }
 
-        with open(file, "w") as f:
-            json.dump(d, f)
+        with open(token_file, "w") as f:
+            json.dump(file_content, f)
 
-    def _readfile_app_token(self, file):
+    def _readfile_app_token(
+        self, token_file: str
+    ) -> Union[Tuple[str, int, Dict[str, Any]], Tuple[None, None, None]]:
         """
         Read the application token in the authentication file.
         Returns (app_token, track_id, app_desc)
         """
         try:
-            with open(file, "r") as f:
+            with open(token_file, "r") as f:
                 d = json.load(f)
-                app_token = d["app_token"]
-                track_id = d["track_id"]
-                app_desc = {
+                app_token: str = d["app_token"]
+                track_id: int = d["track_id"]
+                app_desc: Dict[str, str] = {
                     k: d[k]
                     for k in ("app_id", "app_name", "app_version", "device_name")
                     if k in d
@@ -266,14 +294,13 @@ class Freepybox:
         except FileNotFoundError:
             return (None, None, None)
 
-    def _get_base_url(self, host, port, freebox_api_version):
+    def _get_base_url(self, host: str, port: str, api_version: str) -> str:
         """
         Returns base url for HTTPS requests
-        :return:
         """
-        return "https://{0}:{1}/api/{2}/".format(host, port, freebox_api_version)
+        return f"https://{host}:{port}/api/{api_version}/"
 
-    def _is_app_desc_valid(self, app_desc):
+    def _is_app_desc_valid(self, app_desc: Dict[str, str]) -> bool:
         """
         Check validity of the application descriptor
         """

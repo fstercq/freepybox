@@ -1,5 +1,16 @@
+"""
+Phone API.
+No public documentation available yet.
+"""
+from freebox_api.access import Access
+
+
 class Phone:
-    def __init__(self, access):
+    """
+    Phone
+    """
+
+    def __init__(self, access: Access):
         self._access = access
 
     dect_configuration_schema = {"dect_enabled": True, "dect_registration": True}

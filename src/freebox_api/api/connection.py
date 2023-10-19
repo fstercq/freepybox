@@ -1,5 +1,16 @@
+"""
+Connection API.
+https://dev.freebox.fr/sdk/os/connection/
+"""
+from freebox_api.access import Access
+
+
 class Connection:
-    def __init__(self, access):
+    """
+    Connection
+    """
+
+    def __init__(self, access: Access):
         self._access = access
 
     lte_configuration_data_schema = {"enabled": True}
@@ -40,11 +51,11 @@ class Connection:
         """
         return await self._access.get("connection/xdsl/")
 
-    async def remove_connection_logs(self):
+    async def remove_connection_logs(self) -> None:
         """
         Remove connection logs
         """
-        return await self._access.delete("connection/logs/")
+        return await self._access.delete("connection/logs/")  # type: ignore
 
     async def set_config(self, connection_configuration):
         """

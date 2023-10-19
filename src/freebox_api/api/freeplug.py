@@ -1,5 +1,16 @@
+"""
+Freeplug API.
+https://dev.freebox.fr/sdk/os/freeplug/
+"""
+from freebox_api.access import Access
+
+
 class Freeplug:
-    def __init__(self, access):
+    """
+    Freeplug
+    """
+
+    def __init__(self, access: Access):
         self._access = access
 
     async def get_freeplug_networks(self):

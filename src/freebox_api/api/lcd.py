@@ -1,5 +1,16 @@
+"""
+LCD API.
+https://dev.freebox.fr/sdk/os/lcd/
+"""
+from freebox_api.access import Access
+
+
 class Lcd:
-    def __init__(self, access):
+    """
+    LCD
+    """
+
+    def __init__(self, access: Access):
         self._access = access
 
     lcd_config_schema = {

@@ -1,3 +1,7 @@
+"""
+AirMedia API.
+https://dev.freebox.fr/sdk/os/airmedia/
+"""
 from typing import Any
 from typing import Dict
 from typing import List
@@ -26,11 +30,11 @@ class Airmedia:
         "position": 0,
     }
 
-    async def get_airmedia_receivers(self) -> Optional[List[Dict[str, Any]]]:
+    async def get_airmedia_receivers(self) -> List[Dict[str, Any]]:
         """
         Get AirMedia receivers
         """
-        return await self._access.get("airmedia/receivers/")
+        return await self._access.get("airmedia/receivers/")  # type: ignore
 
     async def send_airmedia(
         self, receiver_name: str, airmedia_data: Dict[str, Any]
@@ -43,15 +47,15 @@ class Airmedia:
         """
         await self._access.post(f"airmedia/receivers/{receiver_name}/", airmedia_data)
 
-    async def get_airmedia_configuration(self) -> Optional[Dict[str, bool]]:
+    async def get_airmedia_configuration(self) -> Dict[str, bool]:
         """
         Get AirMedia configuration
         """
-        return await self._access.get("airmedia/config/")
+        return await self._access.get("airmedia/config/")  # type: ignore
 
     async def set_airmedia_configuration(
         self, airmedia_config: Dict[str, Any]
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         """
         Set AirMedia configuration
 
@@ -79,6 +83,7 @@ class Airmedia:
         config: Dict[str, Any] = {}
         if enabled is not None:
             config.update({"enabled": enabled})
-        if password is not None:
+        if password:
             config.update({"password": password})
+
         return await self.set_airmedia_configuration(config)

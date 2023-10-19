@@ -1,5 +1,16 @@
+"""
+UPnP AV API.
+https://dev.freebox.fr/sdk/os/upnpav/
+"""
+from freebox_api.access import Access
+
+
 class Upnpav:
-    def __init__(self, access):
+    """
+    UPnP AV
+    """
+
+    def __init__(self, access: Access):
         self._access = access
 
     async def get_configuration(self):

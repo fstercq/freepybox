@@ -1,5 +1,16 @@
+"""
+System API.
+https://dev.freebox.fr/sdk/os/system/
+"""
+from freebox_api.access import Access
+
+
 class System:
-    def __init__(self, access):
+    """
+    System
+    """
+
+    def __init__(self, access: Access):
         self._access = access
 
     async def get_config(self):

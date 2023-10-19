@@ -1,5 +1,18 @@
+"""
+Parental Control API.
+https://dev.freebox.fr/sdk/os/parental/
+"""
+from typing import Dict
+
+from freebox_api.access import Access
+
+
 class Parental:
-    def __init__(self, access):
+    """
+    Parental Control
+    """
+
+    def __init__(self, access: Access):
         self._access = access
 
     # valid values are: allowed, denied or webonly
@@ -13,11 +26,11 @@ class Parental:
         """
         return await self._access.post("parental/filter/", parental_filter)
 
-    async def delete_parental_filter(self, filter_id):
+    async def delete_parental_filter(self, filter_id: int) -> Dict[str, bool]:
         """
         Delete parental filter
         """
-        return await self._access.delete(f"parental/filter/{filter_id}")
+        return await self._access.delete(f"parental/filter/{filter_id}")  # type: ignore
 
     async def edit_parental_filter(self, filter_id, parental_filter):
         """

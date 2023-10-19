@@ -1,8 +1,20 @@
+"""
+PVR API [UNSTABLE].
+PVR = Program Video Recording ?
+https://dev.freebox.fr/sdk/os/pvr/
+"""
 import time
+from typing import Dict
+
+from freebox_api.access import Access
 
 
 class Tv:
-    def __init__(self, access):
+    """
+    TV
+    """
+
+    def __init__(self, access: Access):
         self._access = access
 
     async def archive_tv_record(self, record_id):
@@ -23,17 +35,17 @@ class Tv:
         """
         return await self._access.post("pvr/generator/", tv_record_generator)
 
-    async def delete_finished_tv_record(self, record_id):
+    async def delete_finished_tv_record(self, record_id: int) -> Dict[str, bool]:
         """
         Delete finished tv record
         """
-        await self._access.delete(f"pvr/finished/{record_id}")
+        return await self._access.delete(f"pvr/finished/{record_id}")  # type: ignore
 
-    async def delete_programmed_tv_record(self, record_id):
+    async def delete_programmed_tv_record(self, record_id: int) -> Dict[str, bool]:
         """
         Delete programmed tv record
         """
-        await self._access.delete(f"pvr/programmed/{record_id}")
+        return await self._access.delete(f"pvr/programmed/{record_id}")  # type: ignore
 
     async def delete_tv_record_generator(self, generator_id):
         """

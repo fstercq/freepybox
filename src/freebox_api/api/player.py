@@ -1,3 +1,7 @@
+"""
+Player API.
+No public documentation available yet.
+"""
 from typing import Any
 from typing import Dict
 from typing import List
@@ -14,14 +18,10 @@ class Player:
     """
 
     def __init__(
-        self, access: Access, player_api_version: Optional[str] = None
+        self, access: Access, player_api_version: str = _DEFAULT_PLAYER_API_VERSION
     ) -> None:
         self._access = access
-        self._player_api_version = (
-            _DEFAULT_PLAYER_API_VERSION
-            if not player_api_version
-            else player_api_version
-        )
+        self._player_api_version = player_api_version
 
     media_control_seek_args = {"seek_position": 0, "type": "seek_position"}
     media_control_stream = {"quality": "", "source": ""}
@@ -52,11 +52,11 @@ class Player:
     }
     media_control_data_schema = {"args": media_control_stream_args, "cmd": "pause"}
 
-    async def get_players(self) -> Optional[List[Dict[str, Any]]]:
+    async def get_players(self) -> List[Dict[str, Any]]:
         """
         Get players
         """
-        return await self._access.get("player")
+        return await self._access.get("player")  # type: ignore
 
     async def _get_default_player_id(self) -> int:
         """
@@ -64,7 +64,7 @@ class Player:
         """
 
         players = await self.get_players()
-        return players[0]["id"]
+        return int(players[0]["id"])
 
     async def get_player_status(
         self, player_id: Optional[int] = None
@@ -79,7 +79,7 @@ class Player:
         if player_id is None:
             player_id = await self._get_default_player_id()
 
-        return await self._access.get(
+        return await self._access.get(  # type: ignore
             f"player/{player_id}/api/{self._player_api_version}/status/"
         )
 
@@ -96,7 +96,7 @@ class Player:
         if player_id is None:
             player_id = await self._get_default_player_id()
 
-        return await self._access.get(
+        return await self._access.get(  # type: ignore
             f"player/{player_id}/api/{self._player_api_version}/control/volume"
         )
 

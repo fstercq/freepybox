@@ -1,19 +1,24 @@
+"""
+File System API.
+https://dev.freebox.fr/sdk/os/fs/
+"""
 import base64
 import logging
 import os
+from typing import Dict
 
 import freebox_api.exceptions
-
+from freebox_api.access import Access
 
 logger = logging.getLogger(__name__)
 
 
 class Fs:
     """
-    Fs
+    File System
     """
 
-    def __init__(self, access):
+    def __init__(self, access: Access):
         self._access = access
         self._path = "/"
 
@@ -83,11 +88,11 @@ class Fs:
         """
         return await self._access.post("fs/copy/", copy)
 
-    async def delete_file_task(self, task_id):
+    async def delete_file_task(self, task_id: int) -> Dict[str, bool]:
         """
         Delete file task
         """
-        return await self._access.delete(f"fs/tasks/{task_id}")
+        return await self._access.delete(f"fs/tasks/{task_id}")  # type: ignore
 
     async def extract_archive(self, extract):
         """
@@ -150,7 +155,7 @@ class Fs:
         """
         List directory
         """
-        return [i["name"] for i in await self.list_file(self._path)]
+        return [i["name"] for i in await self.list_files(self._path)]
 
     async def mkdir(self, create_directory=create_directory_schema):
         """
