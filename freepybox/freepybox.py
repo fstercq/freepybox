@@ -111,7 +111,7 @@ class Freepybox:
 
     def _get_freebox_access(self, host, port, api_version, token_file, app_desc, timeout=10, protocol='https'):
         '''
-        Returns an access object used for HTTP requests.
+        Returns an Access object used for HTTP requests.
         '''
 
         api_domain = None
