@@ -57,3 +57,17 @@ class Access:
         if 'result' in resp:
             return resp['result']
 
+    def delete(self, end_url):
+        '''
+        Send delete request and return results
+        '''
+        url = urljoin(self.base_url, end_url)
+        r = requests.delete(url, headers=self.header, timeout=self.timeout)
+        resp = r.json()
+
+        if resp['success'] != True:
+            raise HttpRequestError(resp['error_code'])
+
+        if 'result' in resp:
+            return resp['result']
+

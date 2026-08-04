@@ -23,6 +23,7 @@ from freepybox.api.fw import Fw
 from freepybox.api.phone import Phone
 from freepybox.api.airmedia import Airmedia
 from freepybox.api.freeplugs import Freeplugs
+from freepybox.api.network_control import NetworkControl
 
 
 # Token file default location
@@ -41,24 +42,20 @@ app_desc = {
 logger = logging.getLogger(__name__)
 
 class Freepybox:
-    def __init__(self, app_desc=app_desc, token_file=token_file, api_version='v3', timeout=10, protocol='https', tls_verify=None):
+    def __init__(self, app_desc=app_desc, token_file=token_file, api_version='v3', timeout=10, prefer_api_domain=True):
         """Freebox OS client.
 
-        protocol:
-          - 'https' (default)
-          - 'http'
+        api_version can be set to "auto" to detect the major API version via /api_version.
 
-        tls_verify:
-          - None (default): use the bundled Freebox root CA (historical behavior)
-          - True/False: pass-through to requests' verify
-          - str path: path to a CA bundle file
+        prefer_api_domain:
+          - When True (default), use the official api_domain returned by /api_version as the host for subsequent HTTPS API calls.
+            This can be required for HTTPS endpoints on some setups.
         """
         self.token_file = token_file
         self.api_version = api_version
         self.timeout = timeout
         self.app_desc = app_desc
-        self.protocol = protocol
-        self.tls_verify = tls_verify
+        self.prefer_api_domain = prefer_api_domain
 
     def open(self, host, port, protocol=None, tls_verify=None):
         '''
@@ -100,6 +97,7 @@ class Freepybox:
         self.phone = Phone(self._access)
         self.airmedia = Airmedia(self._access)
         self.freeplugs = Freeplugs(self._access)
+        self.network_control = NetworkControl(self._access)
 
 
     def close(self):
@@ -116,7 +114,13 @@ class Freepybox:
         Returns an access object used for HTTP requests.
         '''
 
-        base_url = self._get_base_url(host, port, api_version, protocol)
+        api_domain = None
+
+        effective_host = host
+        if self.prefer_api_domain and api_domain:
+            effective_host = api_domain
+
+        base_url = self._get_base_url(effective_host, port, api_version)
 
         # Read stored application token
         logger.info('Read application authorization file')

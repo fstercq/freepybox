@@ -10,13 +10,14 @@ Install
 -------
 Use the PIP package manager
 ```bash
-$ pip install freepybox
+$ python -m pip install freepybox
 ```
 
-Or manually download and install the last version from github
+Or manually download and install the last version from GitHub
 ```bash
 $ git clone https://github.com/fstercq/freepybox.git
-$ python setup.py install
+$ cd freepybox
+$ python -m pip install .
 ```
 
 Get started
