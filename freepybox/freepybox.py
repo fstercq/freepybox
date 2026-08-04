@@ -41,11 +41,20 @@ app_desc = {
 logger = logging.getLogger(__name__)
 
 class Freepybox:
-    def __init__(self, app_desc=app_desc, token_file=token_file, api_version='v3', timeout=10):
+    def __init__(self, app_desc=app_desc, token_file=token_file, api_version='v3', timeout=10, prefer_api_domain=True):
+        """Freebox OS client.
+
+        api_version can be set to "auto" to detect the major API version via /api_version.
+
+        prefer_api_domain:
+          - When True (default), use the official api_domain returned by /api_version as the host for subsequent HTTPS API calls.
+            This can be required for HTTPS endpoints on some setups.
+        """
         self.token_file = token_file
         self.api_version = api_version
         self.timeout = timeout
         self.app_desc = app_desc
+        self.prefer_api_domain = prefer_api_domain
 
     def open(self, host, port):
         '''
@@ -89,7 +98,13 @@ class Freepybox:
         Returns an access object used for HTTP requests.
         '''
 
-        base_url = self._get_base_url(host, port, api_version)
+        api_domain = None
+
+        effective_host = host
+        if self.prefer_api_domain and api_domain:
+            effective_host = api_domain
+
+        base_url = self._get_base_url(effective_host, port, api_version)
 
         # Read stored application token
         logger.info('Read application authorization file')
