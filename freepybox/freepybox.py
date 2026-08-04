@@ -23,6 +23,7 @@ from freepybox.api.fw import Fw
 from freepybox.api.phone import Phone
 from freepybox.api.airmedia import Airmedia
 from freepybox.api.freeplugs import Freeplugs
+from freepybox.api.network_control import NetworkControl
 
 
 # Token file default location
@@ -82,6 +83,7 @@ class Freepybox:
         self.phone = Phone(self._access)
         self.airmedia = Airmedia(self._access)
         self.freeplugs = Freeplugs(self._access)
+        self.network_control = NetworkControl(self._access)
 
 
     def close(self):
