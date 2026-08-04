@@ -57,7 +57,7 @@ class Freepybox:
         self.app_desc = app_desc
         self.prefer_api_domain = prefer_api_domain
 
-    def open(self, host, port):
+    def open(self, host, port, protocol=None, tls_verify=None):
         '''
         Open a session to the freebox, get a valid access module
         and instantiate freebox modules
@@ -65,9 +65,23 @@ class Freepybox:
         if not self._is_app_desc_valid(self.app_desc): raise InvalidTokenError('invalid application descriptor')
 
         self.session = requests.Session()
+
+        # Allow overriding protocol / TLS behavior per connection.
+        if protocol is not None:
+            self.protocol = protocol
+        if tls_verify is not None:
+            self.tls_verify = tls_verify
+
+        # For HTTPS, default to the bundled CA (historical behavior) unless overridden.
+        # For HTTP, requests ignores TLS verification anyway.
+        if self.protocol == 'https':
+            if self.tls_verify is None:
+                self.session.verify = os.path.join(os.path.dirname(__file__), 'freebox_root_ca.pem')
+            else:
+                self.session.verify = self.tls_verify
         self.session.verify = os.path.join(os.path.dirname(__file__), 'freebox_root_ca.pem')
 
-        self._access = self._get_freebox_access(host, port, self.api_version, self.token_file, self.app_desc, self.timeout)
+        self._access = self._get_freebox_access(host, port, self.api_version, self.token_file, self.app_desc, self.timeout, protocol=self.protocol)
 
         # Instantiate freebox modules
         self.system = System(self._access)
@@ -95,7 +109,7 @@ class Freepybox:
         self._access.post('login/logout')
 
 
-    def _get_freebox_access(self, host, port, api_version, token_file, app_desc, timeout=10):
+    def _get_freebox_access(self, host, port, api_version, token_file, app_desc, timeout=10, protocol='https'):
         '''
         Returns an access object used for HTTP requests.
         '''
@@ -265,12 +279,12 @@ class Freepybox:
         return resp['result']['challenge']
 
 
-    def _get_base_url(self, host, port, freebox_api_version):
+    def _get_base_url(self, host, port, freebox_api_version, protocol='https'):
         '''
         Returns base url for HTTPS requests
         :return:
         '''
-        return 'https://{0}:{1}/api/{2}/'.format(host, port, freebox_api_version)
+        return '{0}://{1}:{2}/api/{3}/'.format(protocol, host, port, freebox_api_version)
 
 
     def _is_app_desc_valid(self, app_desc):
